@@ -1,21 +1,20 @@
 'use client';
 
-import { Box } from '@mui/material';
-import ChatPanel from '../components/ChatPanel';
-import CalendarPanel from '../components/CalendarPanel';
+import ChatPanel from '../components/main/ChatPanel';
+import CalendarPanel from '../components/main/CalendarPanel';
 
 export default function HomePage() {
   return (
-    <Box display="flex" height="100vh">
-      {/* 左：チャット欄 */}
-      <Box flex={5}>
-        <ChatPanel />
-      </Box>
-
-      {/* 右：カレンダー */}
-      <Box flex={5}>
-        <CalendarPanel />
-      </Box>
-    </Box>
+    <div className="h-screen flex flex-col">
+      {/* メイン2分割 */}
+      <div className="flex flex-1 overflow-hidden">
+        <div className="w-1/2 h-full p-4">
+          <ChatPanel />
+        </div>
+        <div className="w-1/2 h-full p-4 bg-base-200">
+          <CalendarPanel />
+        </div>
+      </div>
+    </div>
   );
 }
