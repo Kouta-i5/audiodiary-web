@@ -1,7 +1,7 @@
 'use client';
 
-import ChatPanel from '../components/main/ChatPanel';
-import CalendarPanel from '../components/main/CalendarPanel';
+import ChatPanel from '../../components/home/ChatPanel';
+import CalendarPanel from '../../components/home/CalendarPanel';
 
 export default function HomePage() {
   return (

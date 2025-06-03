@@ -106,12 +106,20 @@ export default function ChatPanel() {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-gradient-to-br from-base-100 via-base-200 to-base-100 rounded-2xl shadow-2xl p-6 ">
       {/* コンテキスト設定フォーム */}
-      <div className="card bg-base-100 shadow-md p-4 mb-4">
-        <div className="font-bold mb-2">今日はどんなことがありましたか？</div>
-        <div className="grid grid-cols-1 gap-2">
-          <input className="input input-bordered" type="date" value={context.date} onChange={e => setContext(c => ({ ...c, date: e.target.value }))} />
+      <div className="card bg-white/80 shadow-lg rounded-xl p-6 mb-6 border border-base-200">
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-2xl">🗒️</span>
+          <span className="font-extrabold text-lg text-gray-700">今日はどんなことがありましたか？</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <input
+            className="input input-bordered input-lg rounded-xl focus:ring-2 focus:ring-accent/60"
+            type="date"
+            value={context.date}
+            onChange={e => setContext(c => ({ ...c, date: e.target.value }))}
+          />
           {/* 時間帯 */}
           <div>
             <div className="mb-1 font-semibold">時間帯</div>
@@ -120,10 +128,11 @@ export default function ChatPanel() {
                 <button
                   key={opt}
                   type="button"
-                  className={`btn btn-sm transition duration-150
-                    shadow rounded-full focus:outline-none focus:ring-2 focus:ring-green-200
+                  className={`
+                    btn btn-sm rounded-full shadow-md font-semibold
+                    transition duration-150
                     ${context.time_of_day.startsWith(opt)
-                      ? 'bg-green-100 text-green-800 border-green-300 btn-active scale-105'
+                      ? 'bg-green-200 text-green-900 border-green-400 scale-105 ring-2 ring-green-200'
                       : 'btn-outline hover:bg-green-100 hover:text-green-800 hover:border-green-300 hover:scale-105'}`}
                   onClick={() => {
                     if (opt === 'その他') {
@@ -157,10 +166,11 @@ export default function ChatPanel() {
                 <button
                   key={opt}
                   type="button"
-                  className={`btn btn-sm transition duration-150
-                    shadow rounded-full focus:outline-none focus:ring-2 focus:ring-green-200
+                  className={`
+                    btn btn-sm rounded-full shadow-md font-semibold
+                    transition duration-150
                     ${context.location.startsWith(opt)
-                      ? 'bg-green-100 text-green-800 border-green-300 btn-active scale-105'
+                      ? 'bg-green-200 text-green-900 border-green-400 scale-105 ring-2 ring-green-200'
                       : 'btn-outline hover:bg-green-100 hover:text-green-800 hover:border-green-300 hover:scale-105'}`}
                   onClick={() => {
                     if (opt === 'その他') {
@@ -194,10 +204,11 @@ export default function ChatPanel() {
                 <button
                   key={opt}
                   type="button"
-                  className={`btn btn-sm transition duration-150
-                    shadow rounded-full focus:outline-none focus:ring-2 focus:ring-green-200
+                  className={`
+                    btn btn-sm rounded-full shadow-md font-semibold
+                    transition duration-150
                     ${context.companion.startsWith(opt)
-                      ? 'bg-green-100 text-green-800 border-green-300 btn-active scale-105'
+                      ? 'bg-green-200 text-green-900 border-green-400 scale-105 ring-2 ring-green-200'
                       : 'btn-outline hover:bg-green-100 hover:text-green-800 hover:border-green-300 hover:scale-105'}`}
                   onClick={() => {
                     if (opt === 'その他') {
@@ -231,10 +242,11 @@ export default function ChatPanel() {
                 <button
                   key={opt}
                   type="button"
-                  className={`btn btn-sm transition duration-150
-                    shadow rounded-full focus:outline-none focus:ring-2 focus:ring-green-200
+                  className={`
+                    btn btn-sm rounded-full shadow-md font-semibold
+                    transition duration-150
                     ${context.mood.startsWith(opt)
-                      ? 'bg-green-100 text-green-800 border-green-300 btn-active scale-105'
+                      ? 'bg-green-200 text-green-900 border-green-400 scale-105 ring-2 ring-green-200'
                       : 'btn-outline hover:bg-green-100 hover:text-green-800 hover:border-green-300 hover:scale-105'}`}
                   onClick={() => {
                     if (opt === 'その他') {
@@ -261,81 +273,82 @@ export default function ChatPanel() {
             )}
           </div>
         </div>
-        <button className="btn btn-accent mt-2" onClick={handleSetContext} disabled={contextLoading}>
+        <button
+          className="btn btn-accent btn-lg mt-4 w-full rounded-xl shadow hover:scale-105 transition"
+          onClick={handleSetContext}
+          disabled={contextLoading}
+        >
           {contextLoading ? <span className="loading loading-spinner"></span> : 'コンテキスト送信'}
         </button>
-        {contextMsg && <div className="mt-2 text-info">{contextMsg}</div>}
+        {contextMsg && <div className="mt-2 text-accent font-semibold">{contextMsg}</div>}
       </div>
       {/* メッセージエリア */}
-      <div className="flex-1 overflow-y-auto p-4 shadow-md space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 bg-white/70 rounded-xl shadow-inner space-y-4 mb-6 border border-base-200">
         {messages.map((msg, i) => (
           <div key={i} className={`chat ${msg.startsWith('🧑‍💬') ? 'chat-end' : 'chat-start'}`}>
-            <div className={`chat-bubble ${msg.startsWith('🧑‍💬') ? 'chat-bubble-primary' : 'chat-bubble-secondary'}`}>
+            <div className={`chat-bubble ${msg.startsWith('🧑‍💬') ? 'chat-bubble-primary' : 'chat-bubble-secondary'} text-base font-medium shadow`}>
               {msg}
             </div>
           </div>
         ))}
       </div>
       {/* 入力エリア＋要約ボタン */}
-      <div className="p-4 border-t border-base-300 flex flex-col gap-2">
-        <div className="flex items-center gap-2 w-full">
-          <form
-            className="flex-1"
-            onSubmit={e => {
-              e.preventDefault();
-              handleSend();
-            }}
-            autoComplete="off"
-          >
-            <input
-              type="text"
-              placeholder="メッセージを入力..."
-              aria-label="メッセージ入力"
-              className="input input-bordered w-full shadow rounded-full focus:outline-none focus:ring-2 focus:ring-green-200 transition"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              disabled={loading}
-              maxLength={200}
-            />
-          </form>
-          <button
-            type="button"
-            className="btn btn-primary btn-circle shadow-md rounded-full transition duration-150 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-green-200"
-            onClick={handleSend}
-            disabled={loading || !input.trim()}
-            aria-label="送信"
-          >
-            {loading ? (
-              <span className="loading loading-spinner"></span>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10l9 4-9 4V6l9 4-9 4z" />
-              </svg>
-            )}
-          </button>
-          <button
-            type="button"
-            className={`btn btn-circle shadow-md rounded-full transition duration-150 bg-green-100 text-green-800 border-green-300 hover:bg-green-200 hover:text-green-900 hover:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-200
-              ${summaryLoading || messages.length === 0 ? 'opacity-70 cursor-not-allowed' : ''}`}
-            onClick={handleSummarize}
-            disabled={summaryLoading || messages.length === 0}
-            aria-label="会話を要約"
-            title="会話を要約"
-          >
-            {summaryLoading ? (
-              <span className="loading loading-spinner"></span>
-            ) : (
-              // 本のアイコン
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-            )}
-          </button>
-        </div>
+      <div className="flex items-center gap-3 bg-white/80 rounded-xl shadow px-4 py-3 border border-base-200">
+        <form
+          className="flex-1"
+          onSubmit={e => {
+            e.preventDefault();
+            handleSend();
+          }}
+          autoComplete="off"
+        >
+          <input
+            type="text"
+            placeholder="メッセージを入力..."
+            aria-label="メッセージ入力"
+            className="input input-bordered input-lg w-full rounded-full shadow focus:ring-2 focus:ring-accent/60 transition"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            disabled={loading}
+            maxLength={200}
+          />
+        </form>
+        <button
+          type="button"
+          className="btn btn-primary btn-circle btn-lg shadow-lg hover:scale-110 transition"
+          onClick={handleSend}
+          disabled={loading || !input.trim()}
+          aria-label="送信"
+        >
+          {loading ? (
+            <span className="loading loading-spinner"></span>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10l9 4-9 4V6l9 4-9 4z" />
+            </svg>
+          )}
+        </button>
+        <button
+          type="button"
+          className={`btn btn-circle btn-lg shadow-lg bg-green-100 text-green-800 border-green-300 hover:bg-green-200 hover:text-green-900 hover:border-green-400 focus:ring-2 focus:ring-green-200 transition
+            ${summaryLoading || messages.length === 0 ? 'opacity-70 cursor-not-allowed' : ''}`}
+          onClick={handleSummarize}
+          disabled={summaryLoading || messages.length === 0}
+          aria-label="会話を要約"
+          title="会話を要約"
+        >
+          {summaryLoading ? (
+            <span className="loading loading-spinner"></span>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+          )}
+        </button>
       </div>
       {/* 要約表示エリア */}
       {summary && (
-        <div className="alert alert-info shadow-lg mx-4 mb-2">
+        <div className="alert alert-info shadow-lg rounded-xl mt-6">
           <span className="font-bold">要約：</span>
           <span>{summary}</span>
         </div>
