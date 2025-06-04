@@ -1,4 +1,5 @@
 import axios from "axios";
+import { ChatContext } from "./schemas";
 
 // ローカル環境のURL
 const baseURL = "http://localhost:8000";
@@ -22,27 +23,34 @@ export async function fetchSummary(conversation: string) {
   }
 
 export async function fetchMessage(content: string) {
-    const res = await api.post('/chat/message', {
-        content,
-    });
-  
-    if (!res.data) {
-      throw new Error('チャットAPIの呼び出しに失敗しました');
+    try {
+      console.log('APIリクエスト:', { content });
+      const res = await api.post('/chat/message', {
+          content,
+      });
+    
+      console.log('APIレスポンス:', res.data);
+      if (!res.data) {
+        throw new Error('チャットAPIの呼び出しに失敗しました: レスポンスデータが空です');
+      }
+    
+      return res.data.content;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('APIエラー詳細:', {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          message: error.message
+        });
+        throw new Error(`チャットAPIの呼び出しに失敗しました: ${error.message}`);
+      }
+      throw error;
     }
-  
-    return res.data.response;
-  }
+}
 
-export async function setChatContext(context: {
-  date: string;
-  time_of_day: string;
-  location: string;
-  companion: string;
-  mood: string;
-}) {
-  const res = await api.post('chat/context', {
-    context,
-  });
+export async function setChatContext(context: ChatContext) {
+  const res = await api.post('chat/context', context);
   if (!res.data) throw new Error('コンテキストAPIの呼び出しに失敗しました');
   return {
     message: res.data.message,

@@ -51,7 +51,13 @@ export default function ChatPanel() {
     // まず空のAIメッセージを追加
     setMessages((prev) => [...prev, `🤖: `]);
     try {
+      console.log('送信するメッセージ:', input);
       const response = await fetchMessage(input);
+      console.log('APIレスポンス:', response);
+
+      if (!response) {
+        throw new Error('APIからのレスポンスが空です');
+      }
 
       // 1文字ずつストリーミング風に表示
       for (let i = 0; i < response.length; i++) {
@@ -69,8 +75,8 @@ export default function ChatPanel() {
         });
       }
     } catch (error) {
+      console.error('メッセージ送信エラー:', error);
       setMessages((prev) => [...prev, '⚠️: エラーが発生しました']);
-      console.error(error);
     }
     setInput('');
     setLoading(false);
@@ -93,20 +99,23 @@ export default function ChatPanel() {
     setContextLoading(true);
     setContextMsg('');
     try {
+      console.log('送信するコンテキスト:', context);
       const result = await setChatContext(context);
+      console.log('APIレスポンス:', result);
       setContextMsg(result.message);
       // initial_messageがあればメッセージエリアに追加
       if (result.initial_message) {
         setMessages(prev => [...prev, `🤖: ${result.initial_message}`]);
       }
-    } catch {
+    } catch (error) {
+      console.error('コンテキスト送信エラー:', error);
       setContextMsg('コンテキスト送信に失敗しました');
     }
     setContextLoading(false);
   };
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-base-100 via-base-200 to-base-100 rounded-2xl shadow-2xl p-6 ">
+    <div className="flex flex-col h-full bg-gradient-to-br from-white via-gray-50 to-gray-100 rounded-2xl shadow-2xl p-6">  
       {/* コンテキスト設定フォーム */}
       <div className="card bg-white/80 shadow-lg rounded-xl p-6 mb-6 border border-base-200">
         <div className="flex items-center gap-2 mb-4">
@@ -278,24 +287,33 @@ export default function ChatPanel() {
           onClick={handleSetContext}
           disabled={contextLoading}
         >
-          {contextLoading ? <span className="loading loading-spinner"></span> : 'コンテキスト送信'}
+          {contextLoading ? <span className="loading loading-spinner"></span> : '会話を始めてみよう'}
         </button>
         {contextMsg && <div className="mt-2 text-accent font-semibold">{contextMsg}</div>}
       </div>
       {/* メッセージエリア */}
       <div className="flex-1 overflow-y-auto p-4 bg-white/70 rounded-xl shadow-inner space-y-4 mb-6 border border-base-200">
-        {messages.map((msg, i) => (
-          <div key={i} className={`chat ${msg.startsWith('🧑‍💬') ? 'chat-end' : 'chat-start'}`}>
-            <div className={`chat-bubble ${msg.startsWith('🧑‍💬') ? 'chat-bubble-primary' : 'chat-bubble-secondary'} text-base font-medium shadow`}>
-              {msg}
+        {messages.map((msg, i) => {
+          const isUser = msg.startsWith('🧑‍💬');
+          return (
+            <div key={i} className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-2`}>
+              <div
+                className={`
+                  max-w-xs px-4 py-2 rounded-2xl shadow
+                  ${isUser
+                    ? 'bg-emerald-200 text-right rounded-br-sm'
+                    : 'bg-gray-100 text-left rounded-bl-sm'}
+                `}
+              >
+                {msg}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-      {/* 入力エリア＋要約ボタン */}
-      <div className="flex items-center gap-3 bg-white/80 rounded-xl shadow px-4 py-3 border border-base-200">
+      <div className="flex flex-row items-center justify-between gap-3 bg-gradient-to-br from-emerald-50 via-white to-emerald-50/50 rounded-xl shadow-lg p-4 border border-emerald-100/50 hover:shadow-xl hover:border-emerald-200/50 transition-all duration-300">
         <form
-          className="flex-1"
+          className="flex-1 flex items-center gap-3"
           onSubmit={e => {
             e.preventDefault();
             handleSend();
@@ -306,42 +324,47 @@ export default function ChatPanel() {
             type="text"
             placeholder="メッセージを入力..."
             aria-label="メッセージ入力"
-            className="input input-bordered input-lg w-full rounded-full shadow focus:ring-2 focus:ring-accent/60 transition"
+            className="input input-bordered input-lg w-full rounded-full shadow-sm bg-white/90 focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400/40 hover:bg-white hover:border-emerald-300/50 transition-all duration-200 py-4 px-4"
             value={input}
             onChange={e => setInput(e.target.value)}
             disabled={loading}
             maxLength={200}
           />
+          <button
+            type="button"
+            className="btn btn-circle btn-xl shadow-lg bg-gradient-to-br from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 hover:scale-110 hover:shadow-xl active:scale-95 transition-all duration-200 min-w-[64px] min-h-[64px] flex items-center justify-center"
+            onClick={handleSend}
+            disabled={loading || !input.trim()}
+            aria-label="送信"
+          >
+            {loading ? (
+              <span className="loading loading-spinner w-8 h-8"></span>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
+            )}
+          </button>
         </form>
         <button
           type="button"
-          className="btn btn-primary btn-circle btn-lg shadow-lg hover:scale-110 transition"
-          onClick={handleSend}
-          disabled={loading || !input.trim()}
-          aria-label="送信"
-        >
-          {loading ? (
-            <span className="loading loading-spinner"></span>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10l9 4-9 4V6l9 4-9 4z" />
-            </svg>
-          )}
-        </button>
-        <button
-          type="button"
-          className={`btn btn-circle btn-lg shadow-lg bg-green-100 text-green-800 border-green-300 hover:bg-green-200 hover:text-green-900 hover:border-green-400 focus:ring-2 focus:ring-green-200 transition
-            ${summaryLoading || messages.length === 0 ? 'opacity-70 cursor-not-allowed' : ''}`}
+          className={`btn btn-circle btn-xl shadow-lg bg-gradient-to-br from-emerald-100 via-emerald-200 to-emerald-300 text-emerald-700 border-emerald-200 
+            hover:from-emerald-200 hover:via-emerald-300 hover:to-emerald-400 
+            hover:text-emerald-800 hover:border-emerald-300 
+            hover:scale-110 hover:shadow-xl active:scale-95
+            focus:ring-2 focus:ring-emerald-200 
+            transition-all duration-200 min-w-[64px] min-h-[64px] flex items-center justify-center
+            ${summaryLoading || messages.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
           onClick={handleSummarize}
           disabled={summaryLoading || messages.length === 0}
           aria-label="会話を要約"
           title="会話を要約"
         >
           {summaryLoading ? (
-            <span className="loading loading-spinner"></span>
+            <span className="loading loading-spinner w-8 h-8"></span>
           ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
             </svg>
           )}
         </button>
