@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { fetchMessage,fetchSummary, setChatContext } from '../../utils/api';
+import { fetchMessage,fetchSummary, setChatContext, saveDiary } from '../../utils/api';
+import { DiaryRequest } from '../../utils/schemas';
 
 // 今日の日付をYYYY-MM-DD形式で取得
 const getToday = () => {
@@ -17,6 +18,8 @@ export default function ChatPanel() {
   const [summary, setSummary] = useState('');
   const [loading, setLoading] = useState(false);
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
 
   // 新規：コンテキスト入力用state
   const [context, setContext] = useState({
@@ -112,6 +115,31 @@ export default function ChatPanel() {
       setContextMsg('コンテキスト送信に失敗しました');
     }
     setContextLoading(false);
+  };
+
+  const handleSave = async () => {
+    if (!summary) {
+      setSaveMessage('要約を生成してから保存してください');
+      return;
+    }
+  
+    setSaving(true);
+    setSaveMessage('');
+  
+    try {
+      // payload を組む
+      const payload: DiaryRequest = context
+        ? { summary, context }
+        : { summary };
+  
+      await saveDiary(payload);
+      setSaveMessage('日記を保存しました');
+    } catch (err) {
+      console.error('保存エラー:', err);
+      setSaveMessage('保存に失敗しました');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -374,6 +402,24 @@ export default function ChatPanel() {
         <div className="alert alert-info shadow-lg rounded-xl mt-6">
           <span className="font-bold">要約：</span>
           <span>{summary}</span>
+          <div className="mt-4">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="btn btn-primary btn-sm rounded-xl shadow hover:scale-105 transition"
+            >
+              {saving ? (
+                <span className="loading loading-spinner loading-sm"></span>
+              ) : (
+                '日記を保存'
+              )}
+            </button>
+            {saveMessage && (
+              <span className={`ml-3 text-sm ${saveMessage.includes('失敗') ? 'text-error' : 'text-success'}`}>
+                {saveMessage}
+              </span>
+            )}
+          </div>
         </div>
       )}
     </div>

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { ChatContext } from "./schemas";
+import { ChatContext, DiaryRequest, DiaryResponse } from "./schemas";
 
 // ローカル環境のURL
 const baseURL = "http://localhost:8000";
@@ -50,11 +50,18 @@ export async function fetchMessage(content: string) {
 }
 
 export async function setChatContext(context: ChatContext) {
-  const res = await api.post('chat/context', context);
+  const res = await api.post('/chat/context', context);
   if (!res.data) throw new Error('コンテキストAPIの呼び出しに失敗しました');
   return {
     message: res.data.message,
     initial_message: res.data.initial_message,
     context: res.data.context,
   };
+}
+
+export async function saveDiary(
+  payload: DiaryRequest,           // ← DiaryRequest 型を直接使う
+): Promise<DiaryResponse> {
+  const { data } = await api.post<DiaryResponse>('/chat/save', payload);
+  return data;
 }
