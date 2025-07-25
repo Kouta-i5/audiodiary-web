@@ -1,5 +1,24 @@
 'use client';
 
+import {
+  Edit as EditIcon,
+  Home as HomeIcon,
+  Info as InfoIcon,
+  Person as PersonIcon,
+  PlayCircleFilledWhite as PracticeIcon,
+  Settings as SettingsIcon
+} from '@mui/icons-material';
+import {
+  Box,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Paper,
+  Stack,
+  Typography
+} from '@mui/material';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -7,69 +26,99 @@ const linkNames: { [key: string]: string } = {
   Profile: 'プロフィール',
   Home: 'ホーム',
   Information: '情報',
-  Setting: '設定'
+  Setting: '設定',
+  Practice: '練習'
 };
 
 const navItems = [
-  { href: '/Profile', icon: '👤', label: linkNames.Profile },
-  { href: '/', icon: '🏠', label: linkNames.Home },
-  { href: '/Information', icon: '📢', label: linkNames.Information },
-  { href: '/Setting', icon: '⚙️', label: linkNames.Setting },
+  { href: '/profile', icon: <PersonIcon />, label: linkNames.Profile },
+  { href: '/', icon: <HomeIcon />, label: linkNames.Home },
+  { href: '/information', icon: <InfoIcon />, label: linkNames.Information },
+  { href: '/setting', icon: <SettingsIcon />, label: linkNames.Setting },
+  { href: '/practice', icon: <PracticeIcon />, label: linkNames.Practice }
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed top-0 left-0 h-full w-60 bg-gradient-to-b from-base-200 via-base-100 to-base-200 shadow-xl flex flex-col z-40">
+    <Paper
+      elevation={3}
+      sx={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        height: '100vh',
+        width: 240,
+        bgcolor: 'background.paper',
+        zIndex: 40,
+        display: 'flex',
+        flexDirection: 'column'
+      }}
+    >
       {/* ロゴ・アプリ名 */}
-      <div className="flex items-center gap-3 px-6 py-5 border-b border-base-300">
-        <span className="text-3xl">📝</span>
-        <span className="font-bold text-lg tracking-wide text-gray-700">AI-Diary</span>
-      </div>
+      <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider' }}>
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <EditIcon sx={{ fontSize: 32, color: 'primary.main' }} />
+          <Typography variant="h6" fontWeight="bold" color="text.primary">
+            AI-Diary
+          </Typography>
+        </Stack>
+      </Box>
+
       {/* メニュー */}
-      <nav className="flex-1 flex flex-col py-4">
-        <ul className="space-y-2">
+      <Box sx={{ flex: 1, py: 2 }}>
+        <List>
           {navItems.map((item) => (
-            <li key={item.href}>
-              <Link
+            <ListItem key={item.href} disablePadding>
+              <ListItemButton
+                component={Link}
                 href={item.href}
-                className={`
-                  flex items-center gap-3 px-5 py-3 rounded-lg font-medium transition
-                  duration-200
-                  ${
-                    pathname === item.href
-                      ? 'bg-gradient-to-r from-green-200 to-green-100 text-green-900 shadow-md scale-[1.03]'
-                      : 'hover:bg-base-300 hover:shadow hover:scale-105 text-gray-700'
-                  }
-                  group
-                `}
+                selected={pathname === item.href}
+                sx={{
+                  mx: 1,
+                  borderRadius: 2,
+                  '&.Mui-selected': {
+                    bgcolor: 'primary.light',
+                    color: 'primary.main',
+                    '&:hover': {
+                      bgcolor: 'primary.light',
+                    },
+                    '& .MuiListItemIcon-root': {
+                      color: 'primary.main',
+                    },
+                  },
+                  '&:hover': {
+                    bgcolor: 'action.hover',
+                  },
+                }}
               >
-                <span
-                  className={`
-                    text-2xl transition duration-200
-                    ${pathname === item.href ? 'scale-110' : 'group-hover:scale-110'}
-                  `}
+                <ListItemIcon
+                  sx={{
+                    color: pathname === item.href ? 'primary.main' : 'text.secondary',
+                    minWidth: 40,
+                  }}
                 >
                   {item.icon}
-                </span>
-                <span
-                  className={`
-                    transition duration-200
-                    ${pathname === item.href ? 'font-bold' : ''}
-                  `}
-                >
-                  {item.label}
-                </span>
-              </Link>
-            </li>
+                </ListItemIcon>
+                <ListItemText
+                  primary={item.label}
+                  primaryTypographyProps={{
+                    fontWeight: pathname === item.href ? 'bold' : 'normal',
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
           ))}
-        </ul>
-      </nav>
-      {/* フッター（任意） */}
-      <div className="px-6 py-4 border-t border-base-300 text-xs text-gray-400">
-        &copy; {new Date().getFullYear()} AudioDiary
-      </div>
-    </aside>
+        </List>
+      </Box>
+
+      {/* フッター */}
+      <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
+        <Typography variant="caption" color="text.secondary" textAlign="center">
+          &copy; {new Date().getFullYear()} AudioDiary
+        </Typography>
+      </Box>
+    </Paper>
   );
 }

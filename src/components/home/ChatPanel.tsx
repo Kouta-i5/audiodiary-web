@@ -1,10 +1,25 @@
 'use client';
 
+import {
+  Note as NoteIcon,
+  Save as SaveIcon,
+  Send as SendIcon,
+  Summarize as SummarizeIcon
+} from '@mui/icons-material';
+import {
+  Alert,
+  Box, Button, Chip,
+  CircularProgress,
+  Container,
+  IconButton,
+  Paper,
+  Stack,
+  TextField,
+  Typography
+} from '@mui/material';
 import { useState } from 'react';
-import { fetchMessage,fetchSummary, setChatContext, saveDiary } from '../../utils/api';
+import { fetchMessage, fetchSummary, saveDiary, setChatContext } from '../../utils/api';
 import { DiaryRequest } from '../../utils/schemas';
-import { FaRegStickyNote, FaSave } from 'react-icons/fa';
-import { HiPaperAirplane } from 'react-icons/hi';
 
 // 今日の日付をYYYY-MM-DD形式で取得
 const getToday = () => {
@@ -23,7 +38,7 @@ export default function ChatPanel() {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
 
-  // 新規：コンテキスト入力用state
+  // コンテキスト入力用state
   const [context, setContext] = useState({
     date: getToday(),
     time_of_day: '',
@@ -66,9 +81,8 @@ export default function ChatPanel() {
 
       // 1文字ずつストリーミング風に表示
       for (let i = 0; i < response.length; i++) {
-        await new Promise((resolve) => setTimeout(resolve, 18)); // 速さは調整可
+        await new Promise((resolve) => setTimeout(resolve, 18));
         setMessages((prev) => {
-          // 最後のAIメッセージだけを更新
           const last = prev[prev.length - 1];
           if (last && last.startsWith('🤖: ')) {
             return [
@@ -99,7 +113,6 @@ export default function ChatPanel() {
     setSummaryLoading(false);
   };
 
-  // 新規：コンテキスト送信ハンドラ
   const handleSetContext = async () => {
     setContextLoading(true);
     setContextMsg('');
@@ -108,7 +121,6 @@ export default function ChatPanel() {
       const result = await setChatContext(context);
       console.log('APIレスポンス:', result);
       setContextMsg(result.message);
-      // initial_messageがあればメッセージエリアに追加
       if (result.initial_message) {
         setMessages(prev => [...prev, `🤖: ${result.initial_message}`]);
       }
@@ -129,7 +141,6 @@ export default function ChatPanel() {
     setSaveMessage('');
   
     try {
-      // payload を組む
       const payload: DiaryRequest = context
         ? { summary, context }
         : { summary };
@@ -145,283 +156,311 @@ export default function ChatPanel() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-blue-50 via-white to-green-50 rounded-3xl shadow-2xl p-8 gap-8">
-      {/* コンテキスト設定フォーム */}
-      <div className="card bg-white/90 shadow-xl rounded-2xl p-8 mb-6 border border-base-200">
-        <div className="flex items-center gap-2 mb-4">
-          <FaRegStickyNote className="text-2xl text-blue-400" />
-          <span className="font-extrabold text-lg text-blue-700">今日はどんなことがありましたか？</span>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input
-            className="input input-bordered input-lg rounded-xl focus:ring-2 focus:ring-accent/60"
-            type="date"
-            value={context.date}
-            onChange={e => setContext(c => ({ ...c, date: e.target.value }))}
-          />
-          {/* 時間帯 */}
-          <div>
-            <div className="mb-1 font-semibold">時間帯</div>
-            <div className="flex flex-wrap gap-2">
-              {timeOfDayOptions.map(opt => (
-                <button
-                  key={opt}
-                  type="button"
-                  className={`
-                    btn btn-sm rounded-full shadow-md font-semibold
-                    transition duration-150
-                    ${context.time_of_day.startsWith(opt)
-                      ? 'bg-green-200 text-green-900 border-green-400 scale-105 ring-2 ring-green-200'
-                      : 'btn-outline hover:bg-green-100 hover:text-green-800 hover:border-green-300 hover:scale-105'}`}
-                  onClick={() => {
-                    if (opt === 'その他') {
-                      setContext(c => ({ ...c, time_of_day: 'その他:' + other.time_of_day }));
-                    } else {
-                      setContext(c => ({ ...c, time_of_day: opt }));
-                    }
+    <Container maxWidth="lg" sx={{ height: '100%', py: 3 }}>
+      <Stack spacing={3} sx={{ height: '100%' }}>
+        {/* コンテキスト設定フォーム */}
+        <Paper elevation={3} sx={{ p: 4, borderRadius: 3 }}>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
+            <NoteIcon color="primary" sx={{ fontSize: 28 }} />
+            <Typography variant="h5" fontWeight="bold" color="primary">
+              今日はどんなことがありましたか？
+            </Typography>
+          </Stack>
+          
+          <Stack spacing={3}>
+            <TextField
+              fullWidth
+              type="date"
+              label="日付"
+              value={context.date}
+              onChange={e => setContext(c => ({ ...c, date: e.target.value }))}
+              variant="outlined"
+              size="medium"
+            />
+            
+            {/* 時間帯 */}
+            <Box>
+              <Typography variant="subtitle1" fontWeight="semibold" sx={{ mb: 1 }}>
+                時間帯
+              </Typography>
+              <Stack direction="row" flexWrap="wrap" gap={1}>
+                {timeOfDayOptions.map(opt => (
+                  <Chip
+                    key={opt}
+                    label={opt}
+                    onClick={() => {
+                      if (opt === 'その他') {
+                        setContext(c => ({ ...c, time_of_day: 'その他:' + other.time_of_day }));
+                      } else {
+                        setContext(c => ({ ...c, time_of_day: opt }));
+                      }
+                    }}
+                    color={context.time_of_day.startsWith(opt) ? 'primary' : 'default'}
+                    variant={context.time_of_day.startsWith(opt) ? 'filled' : 'outlined'}
+                  />
+                ))}
+              </Stack>
+              {context.time_of_day.startsWith('その他') && (
+                <TextField
+                  fullWidth
+                  placeholder="その他の時間帯を入力"
+                  value={other.time_of_day}
+                  onChange={e => {
+                    setOther(o => ({ ...o, time_of_day: e.target.value }));
+                    setContext(c => ({ ...c, time_of_day: 'その他:' + e.target.value }));
                   }}
-                >
-                  {opt}
-                </button>
-              ))}
-            </div>
-            {context.time_of_day.startsWith('その他') && (
-              <input
-                className="input input-bordered mt-2"
-                placeholder="その他の時間帯を入力"
-                value={other.time_of_day}
-                onChange={e => {
-                  setOther(o => ({ ...o, time_of_day: e.target.value }));
-                  setContext(c => ({ ...c, time_of_day: 'その他:' + e.target.value }));
-                }}
-              />
-            )}
-          </div>
-          {/* 場所 */}
-          <div>
-            <div className="mb-1 font-semibold">場所</div>
-            <div className="flex flex-wrap gap-2">
-              {locationOptions.map(opt => (
-                <button
-                  key={opt}
-                  type="button"
-                  className={`
-                    btn btn-sm rounded-full shadow-md font-semibold
-                    transition duration-150
-                    ${context.location.startsWith(opt)
-                      ? 'bg-green-200 text-green-900 border-green-400 scale-105 ring-2 ring-green-200'
-                      : 'btn-outline hover:bg-green-100 hover:text-green-800 hover:border-green-300 hover:scale-105'}`}
-                  onClick={() => {
-                    if (opt === 'その他') {
-                      setContext(c => ({ ...c, location: 'その他:' + other.location }));
-                    } else {
-                      setContext(c => ({ ...c, location: opt }));
-                    }
-                  }}
-                >
-                  {opt}
-                </button>
-              ))}
-            </div>
-            {context.location.startsWith('その他') && (
-              <input
-                className="input input-bordered mt-2"
-                placeholder="その他の場所を入力"
-                value={other.location}
-                onChange={e => {
-                  setOther(o => ({ ...o, location: e.target.value }));
-                  setContext(c => ({ ...c, location: 'その他:' + e.target.value }));
-                }}
-              />
-            )}
-          </div>
-          {/* 一緒にいる人 */}
-          <div>
-            <div className="mb-1 font-semibold">一緒にいる人</div>
-            <div className="flex flex-wrap gap-2">
-              {companionOptions.map(opt => (
-                <button
-                  key={opt}
-                  type="button"
-                  className={`
-                    btn btn-sm rounded-full shadow-md font-semibold
-                    transition duration-150
-                    ${context.companion.startsWith(opt)
-                      ? 'bg-green-200 text-green-900 border-green-400 scale-105 ring-2 ring-green-200'
-                      : 'btn-outline hover:bg-green-100 hover:text-green-800 hover:border-green-300 hover:scale-105'}`}
-                  onClick={() => {
-                    if (opt === 'その他') {
-                      setContext(c => ({ ...c, companion: 'その他:' + other.companion }));
-                    } else {
-                      setContext(c => ({ ...c, companion: opt }));
-                    }
-                  }}
-                >
-                  {opt}
-                </button>
-              ))}
-            </div>
-            {context.companion.startsWith('その他') && (
-              <input
-                className="input input-bordered mt-2"
-                placeholder="その他の人を入力"
-                value={other.companion}
-                onChange={e => {
-                  setOther(o => ({ ...o, companion: e.target.value }));
-                  setContext(c => ({ ...c, companion: 'その他:' + e.target.value }));
-                }}
-              />
-            )}
-          </div>
-          {/* 気分 */}
-          <div>
-            <div className="mb-1 font-semibold">気分</div>
-            <div className="flex flex-wrap gap-2">
-              {moodOptions.map(opt => (
-                <button
-                  key={opt}
-                  type="button"
-                  className={`
-                    btn btn-sm rounded-full shadow-md font-semibold
-                    transition duration-150
-                    ${context.mood.startsWith(opt)
-                      ? 'bg-green-200 text-green-900 border-green-400 scale-105 ring-2 ring-green-200'
-                      : 'btn-outline hover:bg-green-100 hover:text-green-800 hover:border-green-300 hover:scale-105'}`}
-                  onClick={() => {
-                    if (opt === 'その他') {
-                      setContext(c => ({ ...c, mood: 'その他:' + other.mood }));
-                    } else {
-                      setContext(c => ({ ...c, mood: opt }));
-                    }
-                  }}
-                >
-                  {opt}
-                </button>
-              ))}
-            </div>
-            {context.mood.startsWith('その他') && (
-              <input
-                className="input input-bordered mt-2"
-                placeholder="その他の気分を入力"
-                value={other.mood}
-                onChange={e => {
-                  setOther(o => ({ ...o, mood: e.target.value }));
-                  setContext(c => ({ ...c, mood: 'その他:' + e.target.value }));
-                }}
-              />
-            )}
-          </div>
-        </div>
-        <button
-          className="btn btn-accent btn-lg mt-4 w-full rounded-xl shadow hover:scale-105 transition"
-          onClick={handleSetContext}
-          disabled={contextLoading}
-        >
-          {contextLoading ? <span className="loading loading-spinner"></span> : '会話を始めてみよう'}
-        </button>
-        {contextMsg && <div className="mt-2 text-accent font-semibold">{contextMsg}</div>}
-      </div>
-      {/* メッセージエリア */}
-      <div className="flex-1 overflow-y-auto p-6 bg-white/80 rounded-2xl shadow-inner space-y-4 mb-6 border border-base-200">
-        {messages.map((msg, i) => {
-          const isUser = msg.startsWith('🧑‍💬');
-          return (
-            <div key={i} className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-2`}>
-              <div
-                className={`
-                  max-w-lg px-5 py-3 rounded-2xl shadow-lg
-                  ${isUser
-                    ? 'bg-gradient-to-br from-emerald-200 to-emerald-100 text-right rounded-br-sm'
-                    : 'bg-gradient-to-br from-blue-100 to-blue-50 text-left rounded-bl-sm'}
-                `}
-              >
-                {msg}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      {/* 入力エリア */}
-      <div className="flex flex-row items-center justify-between gap-3 bg-gradient-to-br from-emerald-50 via-white to-emerald-50/50 rounded-2xl shadow-lg p-6 border border-emerald-100/50 hover:shadow-xl hover:border-emerald-200/50 transition-all duration-300">
-        <form
-          className="flex-1 flex items-center gap-3"
-          onSubmit={e => {
-            e.preventDefault();
-            handleSend();
-          }}
-          autoComplete="off"
-        >
-          <input
-            type="text"
-            placeholder="メッセージを入力..."
-            aria-label="メッセージ入力"
-            className="input input-bordered input-lg w-full rounded-full shadow-sm bg-white/90 focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400/40 hover:bg-white hover:border-emerald-300/50 transition-all duration-200 py-4 px-4"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            disabled={loading}
-            maxLength={200}
-          />
-          <button
-            type="button"
-            className="btn btn-circle btn-xl shadow-lg bg-gradient-to-br from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 hover:scale-110 hover:shadow-xl active:scale-95 transition-all duration-200 min-w-[64px] min-h-[64px] flex items-center justify-center"
-            onClick={handleSend}
-            disabled={loading || !input.trim()}
-            aria-label="送信"
-          >
-            {loading ? (
-              <span className="loading loading-spinner w-8 h-8"></span>
-            ) : (
-              <HiPaperAirplane className="h-8 w-8 text-emerald-600" />
-            )}
-          </button>
-        </form>
-        <button
-          type="button"
-          className={`btn btn-circle btn-xl shadow-lg bg-gradient-to-br from-emerald-100 via-emerald-200 to-emerald-300 text-emerald-700 border-emerald-200 
-            hover:from-emerald-200 hover:via-emerald-300 hover:to-emerald-400 
-            hover:text-emerald-800 hover:border-emerald-300 
-            hover:scale-110 hover:shadow-xl active:scale-95
-            focus:ring-2 focus:ring-emerald-200 
-            transition-all duration-200 min-w-[64px] min-h-[64px] flex items-center justify-center
-            ${summaryLoading || messages.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-          onClick={handleSummarize}
-          disabled={summaryLoading || messages.length === 0}
-          aria-label="会話を要約"
-          title="会話を要約"
-        >
-          {summaryLoading ? (
-            <span className="loading loading-spinner w-8 h-8"></span>
-          ) : (
-            <FaRegStickyNote className="h-8 w-8" />
-          )}
-        </button>
-      </div>
-      {/* 要約表示エリア */}
-      {summary && (
-        <div className="alert alert-info shadow-lg rounded-2xl mt-6 flex items-center gap-6 p-8 text-xl">
-          <FaSave className="text-3xl text-blue-400" />
-          <span className="font-bold">要約：</span>
-          <span className="flex-1 text-lg">{summary}</span>
-          <div className="ml-auto">
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="btn btn-primary btn-lg rounded-xl shadow hover:scale-105 transition"
-            >
-              {saving ? (
-                <span className="loading loading-spinner loading-sm"></span>
-              ) : (
-                '日記を保存'
+                  sx={{ mt: 2 }}
+                />
               )}
-            </button>
-            {saveMessage && (
-              <span className={`ml-3 text-lg ${saveMessage.includes('失敗') ? 'text-error' : 'text-success'}`}>
-                {saveMessage}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
+            </Box>
+
+            {/* 場所 */}
+            <Box>
+              <Typography variant="subtitle1" fontWeight="semibold" sx={{ mb: 1 }}>
+                場所
+              </Typography>
+              <Stack direction="row" flexWrap="wrap" gap={1}>
+                {locationOptions.map(opt => (
+                  <Chip
+                    key={opt}
+                    label={opt}
+                    onClick={() => {
+                      if (opt === 'その他') {
+                        setContext(c => ({ ...c, location: 'その他:' + other.location }));
+                      } else {
+                        setContext(c => ({ ...c, location: opt }));
+                      }
+                    }}
+                    color={context.location.startsWith(opt) ? 'primary' : 'default'}
+                    variant={context.location.startsWith(opt) ? 'filled' : 'outlined'}
+                  />
+                ))}
+              </Stack>
+              {context.location.startsWith('その他') && (
+                <TextField
+                  fullWidth
+                  placeholder="その他の場所を入力"
+                  value={other.location}
+                  onChange={e => {
+                    setOther(o => ({ ...o, location: e.target.value }));
+                    setContext(c => ({ ...c, location: 'その他:' + e.target.value }));
+                  }}
+                  sx={{ mt: 2 }}
+                />
+              )}
+            </Box>
+
+            {/* 一緒にいる人 */}
+            <Box>
+              <Typography variant="subtitle1" fontWeight="semibold" sx={{ mb: 1 }}>
+                一緒にいる人
+              </Typography>
+              <Stack direction="row" flexWrap="wrap" gap={1}>
+                {companionOptions.map(opt => (
+                  <Chip
+                    key={opt}
+                    label={opt}
+                    onClick={() => {
+                      if (opt === 'その他') {
+                        setContext(c => ({ ...c, companion: 'その他:' + other.companion }));
+                      } else {
+                        setContext(c => ({ ...c, companion: opt }));
+                      }
+                    }}
+                    color={context.companion.startsWith(opt) ? 'primary' : 'default'}
+                    variant={context.companion.startsWith(opt) ? 'filled' : 'outlined'}
+                  />
+                ))}
+              </Stack>
+              {context.companion.startsWith('その他') && (
+                <TextField
+                  fullWidth
+                  placeholder="その他の人を入力"
+                  value={other.companion}
+                  onChange={e => {
+                    setOther(o => ({ ...o, companion: e.target.value }));
+                    setContext(c => ({ ...c, companion: 'その他:' + e.target.value }));
+                  }}
+                  sx={{ mt: 2 }}
+                />
+              )}
+            </Box>
+
+            {/* 気分 */}
+            <Box>
+              <Typography variant="subtitle1" fontWeight="semibold" sx={{ mb: 1 }}>
+                気分
+              </Typography>
+              <Stack direction="row" flexWrap="wrap" gap={1}>
+                {moodOptions.map(opt => (
+                  <Chip
+                    key={opt}
+                    label={opt}
+                    onClick={() => {
+                      if (opt === 'その他') {
+                        setContext(c => ({ ...c, mood: 'その他:' + other.mood }));
+                      } else {
+                        setContext(c => ({ ...c, mood: opt }));
+                      }
+                    }}
+                    color={context.mood.startsWith(opt) ? 'primary' : 'default'}
+                    variant={context.mood.startsWith(opt) ? 'filled' : 'outlined'}
+                  />
+                ))}
+              </Stack>
+              {context.mood.startsWith('その他') && (
+                <TextField
+                  fullWidth
+                  placeholder="その他の気分を入力"
+                  value={other.mood}
+                  onChange={e => {
+                    setOther(o => ({ ...o, mood: e.target.value }));
+                    setContext(c => ({ ...c, mood: 'その他:' + e.target.value }));
+                  }}
+                  sx={{ mt: 2 }}
+                />
+              )}
+            </Box>
+          </Stack>
+
+          <Button
+            fullWidth
+            variant="contained"
+            size="large"
+            onClick={handleSetContext}
+            disabled={contextLoading}
+            sx={{ mt: 3, borderRadius: 2 }}
+          >
+            {contextLoading ? '読み込み中...' : '会話を始めてみよう'}
+          </Button>
+          
+          {contextMsg && (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              {contextMsg}
+            </Alert>
+          )}
+        </Paper>
+
+        {/* メッセージエリア */}
+        <Paper 
+          elevation={2} 
+          sx={{ 
+            flex: 1, 
+            p: 3, 
+            borderRadius: 3,
+            overflow: 'auto',
+            bgcolor: 'grey.50'
+          }}
+        >
+          <Stack spacing={2}>
+            {messages.map((msg, i) => {
+              const isUser = msg.startsWith('🧑‍💬');
+              return (
+                <Box
+                  key={i}
+                  display="flex"
+                  justifyContent={isUser ? 'flex-end' : 'flex-start'}
+                >
+                  <Paper
+                    elevation={1}
+                    sx={{
+                      p: 2,
+                      maxWidth: '70%',
+                      borderRadius: 3,
+                      bgcolor: isUser ? 'primary.light' : 'white',
+                      color: isUser ? 'primary.contrastText' : 'text.primary',
+                      borderTopRightRadius: isUser ? 1 : 3,
+                      borderTopLeftRadius: isUser ? 3 : 1,
+                    }}
+                  >
+                    <Typography variant="body1">
+                      {msg}
+                    </Typography>
+                  </Paper>
+                </Box>
+              );
+            })}
+          </Stack>
+        </Paper>
+
+        {/* 入力エリア */}
+        <Paper elevation={3} sx={{ p: 3, borderRadius: 3 }}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <TextField
+              fullWidth
+              placeholder="メッセージを入力..."
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              disabled={loading}
+              variant="outlined"
+              size="medium"
+              sx={{ borderRadius: 2 }}
+            />
+            <IconButton
+              color="primary"
+              onClick={handleSend}
+              disabled={loading || !input.trim()}
+              sx={{ 
+                bgcolor: 'primary.main',
+                color: 'white',
+                '&:hover': { bgcolor: 'primary.dark' },
+                '&:disabled': { bgcolor: 'grey.300' }
+              }}
+            >
+              {loading ? <CircularProgress size={24} color="inherit" /> : <SendIcon />}
+            </IconButton>
+            <IconButton
+              color="secondary"
+              onClick={handleSummarize}
+              disabled={summaryLoading || messages.length === 0}
+              sx={{ 
+                bgcolor: 'secondary.light',
+                color: 'secondary.contrastText',
+                '&:hover': { bgcolor: 'secondary.main' },
+                '&:disabled': { bgcolor: 'grey.300' }
+              }}
+            >
+              {summaryLoading ? <CircularProgress size={24} color="inherit" /> : <SummarizeIcon />}
+            </IconButton>
+          </Stack>
+        </Paper>
+
+        {/* 要約表示エリア */}
+        {summary && (
+          <Alert 
+            severity="info" 
+            action={
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={handleSave}
+                  disabled={saving}
+                  startIcon={<SaveIcon />}
+                >
+                  {saving ? '保存中...' : '日記を保存'}
+                </Button>
+                {saveMessage && (
+                  <Typography 
+                    variant="body2" 
+                    color={saveMessage.includes('失敗') ? 'error.main' : 'success.main'}
+                  >
+                    {saveMessage}
+                  </Typography>
+                )}
+              </Stack>
+            }
+            sx={{ borderRadius: 3 }}
+          >
+            <Typography variant="h6" fontWeight="bold" sx={{ mb: 1 }}>
+              要約：
+            </Typography>
+            <Typography variant="body1">
+              {summary}
+            </Typography>
+          </Alert>
+        )}
+      </Stack>
+    </Container>
   );
 }

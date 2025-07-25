@@ -1,7 +1,9 @@
+import "@/app/globals.css";
+import ClientThemeProvider from "@/components/clientThemeProvider";
+import Sidebar from "@/components/sidebar";
+import { Box } from '@mui/material';
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import Sidebar from "../components/Sidebar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,14 +26,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja" data-theme="light">
+    <html lang="ja">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <div className="flex h-screen">
-          <Sidebar />
-          <main className="flex-1 ml-60">
-            {children}
-          </main>
-        </div>
+        <ClientThemeProvider>
+          <Box sx={{ display: 'flex', height: '100vh' }}>
+            <Sidebar />
+            <Box component="main" sx={{ flex: 1, ml: '240px' }}>
+              {children}
+            </Box>
+          </Box>
+        </ClientThemeProvider>
       </body>
     </html>
   );
