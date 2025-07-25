@@ -5,13 +5,15 @@ export interface ChatContext {
     companion: string
     mood: string
 }
+
 export interface DiaryRequest {
     summary: string
     context?: ChatContext
 }
+
 export interface DiaryResponse {
     diary_id: number
-    data: string
+    date: string
     summary: string
     context?: ChatContext[]
 }

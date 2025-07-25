@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { fetchMessage,fetchSummary, setChatContext, saveDiary } from '../../utils/api';
 import { DiaryRequest } from '../../utils/schemas';
+import { FaRegStickyNote, FaSave } from 'react-icons/fa';
+import { HiPaperAirplane } from 'react-icons/hi';
 
 // 今日の日付をYYYY-MM-DD形式で取得
 const getToday = () => {
@@ -143,12 +145,12 @@ export default function ChatPanel() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-white via-gray-50 to-gray-100 rounded-2xl shadow-2xl p-6">  
+    <div className="flex flex-col h-full bg-gradient-to-br from-blue-50 via-white to-green-50 rounded-3xl shadow-2xl p-8 gap-8">
       {/* コンテキスト設定フォーム */}
-      <div className="card bg-white/80 shadow-lg rounded-xl p-6 mb-6 border border-base-200">
+      <div className="card bg-white/90 shadow-xl rounded-2xl p-8 mb-6 border border-base-200">
         <div className="flex items-center gap-2 mb-4">
-          <span className="text-2xl">🗒️</span>
-          <span className="font-extrabold text-lg text-gray-700">今日はどんなことがありましたか？</span>
+          <FaRegStickyNote className="text-2xl text-blue-400" />
+          <span className="font-extrabold text-lg text-blue-700">今日はどんなことがありましたか？</span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <input
@@ -320,17 +322,17 @@ export default function ChatPanel() {
         {contextMsg && <div className="mt-2 text-accent font-semibold">{contextMsg}</div>}
       </div>
       {/* メッセージエリア */}
-      <div className="flex-1 overflow-y-auto p-4 bg-white/70 rounded-xl shadow-inner space-y-4 mb-6 border border-base-200">
+      <div className="flex-1 overflow-y-auto p-6 bg-white/80 rounded-2xl shadow-inner space-y-4 mb-6 border border-base-200">
         {messages.map((msg, i) => {
           const isUser = msg.startsWith('🧑‍💬');
           return (
             <div key={i} className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-2`}>
               <div
                 className={`
-                  max-w-xs px-4 py-2 rounded-2xl shadow
+                  max-w-lg px-5 py-3 rounded-2xl shadow-lg
                   ${isUser
-                    ? 'bg-emerald-200 text-right rounded-br-sm'
-                    : 'bg-gray-100 text-left rounded-bl-sm'}
+                    ? 'bg-gradient-to-br from-emerald-200 to-emerald-100 text-right rounded-br-sm'
+                    : 'bg-gradient-to-br from-blue-100 to-blue-50 text-left rounded-bl-sm'}
                 `}
               >
                 {msg}
@@ -339,7 +341,8 @@ export default function ChatPanel() {
           );
         })}
       </div>
-      <div className="flex flex-row items-center justify-between gap-3 bg-gradient-to-br from-emerald-50 via-white to-emerald-50/50 rounded-xl shadow-lg p-4 border border-emerald-100/50 hover:shadow-xl hover:border-emerald-200/50 transition-all duration-300">
+      {/* 入力エリア */}
+      <div className="flex flex-row items-center justify-between gap-3 bg-gradient-to-br from-emerald-50 via-white to-emerald-50/50 rounded-2xl shadow-lg p-6 border border-emerald-100/50 hover:shadow-xl hover:border-emerald-200/50 transition-all duration-300">
         <form
           className="flex-1 flex items-center gap-3"
           onSubmit={e => {
@@ -368,9 +371,7 @@ export default function ChatPanel() {
             {loading ? (
               <span className="loading loading-spinner w-8 h-8"></span>
             ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-              </svg>
+              <HiPaperAirplane className="h-8 w-8 text-emerald-600" />
             )}
           </button>
         </form>
@@ -391,22 +392,21 @@ export default function ChatPanel() {
           {summaryLoading ? (
             <span className="loading loading-spinner w-8 h-8"></span>
           ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
-            </svg>
+            <FaRegStickyNote className="h-8 w-8" />
           )}
         </button>
       </div>
       {/* 要約表示エリア */}
       {summary && (
-        <div className="alert alert-info shadow-lg rounded-xl mt-6">
+        <div className="alert alert-info shadow-lg rounded-2xl mt-6 flex items-center gap-6 p-8 text-xl">
+          <FaSave className="text-3xl text-blue-400" />
           <span className="font-bold">要約：</span>
-          <span>{summary}</span>
-          <div className="mt-4">
+          <span className="flex-1 text-lg">{summary}</span>
+          <div className="ml-auto">
             <button
               onClick={handleSave}
               disabled={saving}
-              className="btn btn-primary btn-sm rounded-xl shadow hover:scale-105 transition"
+              className="btn btn-primary btn-lg rounded-xl shadow hover:scale-105 transition"
             >
               {saving ? (
                 <span className="loading loading-spinner loading-sm"></span>
@@ -415,7 +415,7 @@ export default function ChatPanel() {
               )}
             </button>
             {saveMessage && (
-              <span className={`ml-3 text-sm ${saveMessage.includes('失敗') ? 'text-error' : 'text-success'}`}>
+              <span className={`ml-3 text-lg ${saveMessage.includes('失敗') ? 'text-error' : 'text-success'}`}>
                 {saveMessage}
               </span>
             )}

@@ -65,3 +65,21 @@ export async function saveDiary(
   const { data } = await api.post<DiaryResponse>('/chat/save', payload);
   return data;
 }
+
+export async function fetchDiaries(): Promise<DiaryResponse[]> {
+  try {
+    const { data } = await api.get<DiaryResponse[]>('/diary/');
+    return data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('日記一覧の取得に失敗しました:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message
+      });
+      throw new Error(`日記一覧の取得に失敗しました: ${error.message}`);
+    }
+    throw error;
+  }
+}

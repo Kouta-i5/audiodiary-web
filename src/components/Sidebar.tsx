@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -13,7 +12,7 @@ const linkNames: { [key: string]: string } = {
 
 const navItems = [
   { href: '/Profile', icon: '👤', label: linkNames.Profile },
-  { href: '/Home', icon: '🏠', label: linkNames.Home },
+  { href: '/', icon: '🏠', label: linkNames.Home },
   { href: '/Information', icon: '📢', label: linkNames.Information },
   { href: '/Setting', icon: '⚙️', label: linkNames.Setting },
 ];
@@ -26,7 +25,7 @@ export default function Sidebar() {
       {/* ロゴ・アプリ名 */}
       <div className="flex items-center gap-3 px-6 py-5 border-b border-base-300">
         <span className="text-3xl">📝</span>
-        <span className="font-bold text-lg tracking-wide text-gray-700">AudioDiary</span>
+        <span className="font-bold text-lg tracking-wide text-gray-700">AI-Diary</span>
       </div>
       {/* メニュー */}
       <nav className="flex-1 flex flex-col py-4">
