@@ -1,21 +1,19 @@
 'use client';
 
-import { Box, Stack } from '@mui/material';
+import { Grid } from '@mui/material';
 import CalendarPanel from '../components/home/calendarPanel';
 import ChatPanel from '../components/home/chatPanel';
 
 export default function HomePage() {
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* メイン2分割 */}
-      <Stack direction="row" sx={{ flex: 1, overflow: 'hidden' }}>
-        <Box sx={{ width: '50%', height: '100%', p: 2 }}>
-          <ChatPanel />
-        </Box>
-        <Box sx={{ width: '50%', height: '100%', p: 2 }}>
-          <CalendarPanel />
-        </Box>
-      </Stack>
-    </Box>
+    <Grid container spacing={0} sx={{ flex: 1, height: '100vh' }}>
+      <Grid size={6} sx={{ height: '100%', p: 2, overflow: 'auto' }}>
+        <ChatPanel />
+      </Grid>
+      {/* 右側: カレンダーパネル */}
+      <Grid size={6} sx={{ height: '100%', p: 2, overflow: 'auto' }}>
+        <CalendarPanel />
+      </Grid>
+    </Grid>
   );
 }

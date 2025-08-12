@@ -5,18 +5,17 @@ import {
   Home as HomeIcon,
   Info as InfoIcon,
   Person as PersonIcon,
-  PlayCircleFilledWhite as PracticeIcon,
   Settings as SettingsIcon
 } from '@mui/icons-material';
 import {
   Box,
+  Grid,
   List,
   ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
   Paper,
-  Stack,
   Typography
 } from '@mui/material';
 import Link from 'next/link';
@@ -27,7 +26,6 @@ const linkNames: { [key: string]: string } = {
   Home: 'ホーム',
   Information: '情報',
   Setting: '設定',
-  Practice: '練習'
 };
 
 const navItems = [
@@ -35,7 +33,6 @@ const navItems = [
   { href: '/', icon: <HomeIcon />, label: linkNames.Home },
   { href: '/information', icon: <InfoIcon />, label: linkNames.Information },
   { href: '/setting', icon: <SettingsIcon />, label: linkNames.Setting },
-  { href: '/practice', icon: <PracticeIcon />, label: linkNames.Practice }
 ];
 
 export default function Sidebar() {
@@ -56,14 +53,18 @@ export default function Sidebar() {
         flexDirection: 'column'
       }}
     >
-      {/* ロゴ・アプリ名 */}
+      {/* ロゴ・アプリ名 - MUI v7 Gridを使用 */}
       <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider' }}>
-        <Stack direction="row" alignItems="center" spacing={2}>
-          <EditIcon sx={{ fontSize: 32, color: 'primary.main' }} />
-          <Typography variant="h6" fontWeight="bold" color="text.primary">
-            AI-Diary
-          </Typography>
-        </Stack>
+        <Grid container spacing={2} alignItems="center">
+          <Grid size="auto">
+            <EditIcon sx={{ fontSize: 32, color: 'primary.main' }} />
+          </Grid>
+          <Grid size="grow">
+            <Typography variant="h6" fontWeight="bold" color="text.primary">
+              AI-Diary
+            </Typography>
+          </Grid>
+        </Grid>
       </Box>
 
       {/* メニュー */}

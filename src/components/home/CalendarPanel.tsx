@@ -15,11 +15,9 @@ import {
   Card,
   Chip,
   CircularProgress,
-  Container,
-  Divider,
+  Grid,
   IconButton,
   Paper,
-  Stack,
   Typography
 } from '@mui/material';
 import dayjs, { Dayjs } from 'dayjs';
@@ -140,227 +138,271 @@ export default function CalendarPanel() {
   const selectedDiary = getDiaryForDate(selectedDate);
 
   return (
-    <Container maxWidth="lg" sx={{ height: '100%', py: 3 }}>
-      <Stack spacing={4} sx={{ height: '100%' }}>
+    <Box sx={{ height: '100%', overflow: 'auto' }}>
+      <Grid container spacing={3} sx={{ height: '100%' }}>
         {/* カレンダーセクション */}
-        <Paper elevation={3} sx={{ p: 4, borderRadius: 3, bgcolor: 'primary.50' }}>
-          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
-            <CalendarIcon color="primary" sx={{ fontSize: 28 }} />
-            <Typography variant="h5" fontWeight="bold" color="primary">
-              カレンダー
-            </Typography>
-          </Stack>
-
-          {/* 月ナビゲーション */}
-          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
-            <IconButton onClick={handlePrevMonth} color="primary">
-              <ChevronLeftIcon />
-            </IconButton>
-            <Typography variant="h6" fontWeight="bold">
-              {currentMonth.format('YYYY年 M月')}
-            </Typography>
-            <IconButton onClick={handleNextMonth} color="primary">
-              <ChevronRightIcon />
-            </IconButton>
-          </Stack>
-
-          {/* 曜日ヘッダー */}
-          <Stack direction="row" sx={{ mb: 1 }}>
-            {['日', '月', '火', '水', '木', '金', '土'].map(day => (
-              <Box key={day} sx={{ flex: 1, p: 1, textAlign: 'center' }}>
-                <Typography 
-                  variant="body2" 
-                  fontWeight="bold"
-                  color={day === '日' ? 'error.main' : day === '土' ? 'primary.main' : 'text.primary'}
-                >
-                  {day}
+        <Grid size={12}>
+          <Paper elevation={3} sx={{ p: 4, borderRadius: 3, bgcolor: 'primary.50' }}>
+            <Grid container alignItems="center" spacing={1} sx={{ mb: 3 }}>
+              <Grid size="auto">
+                <CalendarIcon color="primary" sx={{ fontSize: 28 }} />
+              </Grid>
+              <Grid size="grow">
+                <Typography variant="h5" fontWeight="bold" color="primary">
+                  カレンダー
                 </Typography>
-              </Box>
-            ))}
-          </Stack>
+              </Grid>
+            </Grid>
 
-          {/* カレンダーグリッド */}
-          <Stack direction="row" flexWrap="wrap">
-            {calendarDays.map((day, index) => {
-              if (!day) {
-                return <Box key={`empty-${index}`} sx={{ flex: 1, minHeight: 48 }} />;
-              }
+            {/* 月ナビゲーション */}
+            <Grid container alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
+              <Grid size="auto">
+                <IconButton onClick={handlePrevMonth} color="primary">
+                  <ChevronLeftIcon />
+                </IconButton>
+              </Grid>
+              <Grid size="grow">
+                <Typography variant="h6" fontWeight="bold">
+                  {currentMonth.format('YYYY年 M月')}
+                </Typography>
+              </Grid>
+              <Grid size="auto">
+                <IconButton onClick={handleNextMonth} color="primary">
+                  <ChevronRightIcon />
+                </IconButton>
+              </Grid>
+            </Grid>
 
-              const isCurrentMonth = day.month() === currentMonth.month();
-              const isSelected = day.isSame(selectedDate, 'day');
-              const isToday = day.isSame(dayjs(), 'day');
-              const hasDiary = getDiaryForDate(day);
-
-              return (
-                <Box key={day.format('YYYY-MM-DD')} sx={{ flex: 1 }}>
-                  <Button
-                    fullWidth
-                    onClick={() => handleDateClick(day)}
-                    sx={{
-                      minHeight: 48,
-                      position: 'relative',
-                      color: isCurrentMonth ? 'text.primary' : 'text.disabled',
-                      bgcolor: isSelected ? 'primary.main' : 'transparent',
-                      '&:hover': {
-                        bgcolor: isSelected ? 'primary.dark' : 'action.hover'
-                      },
-                      border: isToday ? 2 : 0,
-                      borderColor: 'primary.main',
-                      fontWeight: isToday ? 'bold' : 'normal'
-                    }}
+            {/* 曜日ヘッダー */}
+            <Grid container direction="row" sx={{ mb: 1 }}>
+              {['日', '月', '火', '水', '木', '金', '土'].map(day => (
+                <Grid key={day} size={1.4} sx={{ p: 1, textAlign: 'center' }}>
+                  <Typography 
+                    variant="body2" 
+                    fontWeight="bold"
+                    color={day === '日' ? 'error.main' : day === '土' ? 'primary.main' : 'text.primary'}
                   >
-                    <Stack alignItems="center" spacing={0.5}>
-                      <Typography variant="body2">
-                        {day.date()}
-                      </Typography>
-                      {hasDiary && (
-                        <Box
-                          sx={{
-                            width: 6,
-                            height: 6,
-                            borderRadius: '50%',
-                            bgcolor: isSelected ? 'primary.contrastText' : 'primary.main'
-                          }}
-                        />
-                      )}
-                    </Stack>
-                  </Button>
-                </Box>
-              );
-            })}
-          </Stack>
-        </Paper>
+                    {day}
+                  </Typography>
+                </Grid>
+              ))}
+            </Grid>
 
-        <Divider />
+            {/* カレンダーグリッド */}
+            <Grid container direction="row" flexWrap="wrap">
+              {calendarDays.map((day, index) => {
+                if (!day) {
+                  return <Grid key={`empty-${index}`} size={1.4} sx={{ minHeight: 48 }} />;
+                }
+
+                const isCurrentMonth = day.month() === currentMonth.month();
+                const isSelected = day.isSame(selectedDate, 'day');
+                const isToday = day.isSame(dayjs(), 'day');
+                const hasDiary = getDiaryForDate(day);
+
+                return (
+                  <Grid key={day.format('YYYY-MM-DD')} size={1.4}>
+                    <Button
+                      fullWidth
+                      onClick={() => handleDateClick(day)}
+                      sx={{
+                        minHeight: 48,
+                        position: 'relative',
+                        color: isCurrentMonth ? 'text.primary' : 'text.disabled',
+                        bgcolor: isSelected ? 'primary.main' : 'transparent',
+                        '&:hover': {
+                          bgcolor: isSelected ? 'primary.dark' : 'action.hover'
+                        },
+                        border: isToday ? 2 : 0,
+                        borderColor: 'primary.main',
+                        fontWeight: isToday ? 'bold' : 'normal'
+                      }}
+                    >
+                      <Grid container alignItems="center" spacing={0.5}>
+                        <Grid size="auto">
+                          <Typography variant="body2">
+                            {day.date()}
+                          </Typography>
+                        </Grid>
+                        {hasDiary && (
+                          <Grid size="auto">
+                            <Box
+                              sx={{
+                                width: 6,
+                                height: 6,
+                                borderRadius: '50%',
+                                bgcolor: isSelected ? 'primary.contrastText' : 'primary.main'
+                              }}
+                            />
+                          </Grid>
+                        )}
+                      </Grid>
+                    </Button>
+                  </Grid>
+                );
+              })}
+            </Grid>
+          </Paper>
+        </Grid>
 
         {/* 日記セクション */}
-        <Paper elevation={3} sx={{ flex: 1, p: 4, borderRadius: 3, bgcolor: 'secondary.50' }}>
-          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
-            <BookIcon color="secondary" sx={{ fontSize: 28 }} />
-            <Typography variant="h5" fontWeight="bold" color="secondary">
-              日記
-            </Typography>
-          </Stack>
+        <Grid size={12}>
+          <Paper elevation={3} sx={{ flex: 1, p: 4, borderRadius: 3, bgcolor: 'secondary.50' }}>
+            <Grid container alignItems="center" spacing={1} sx={{ mb: 3 }}>
+              <Grid size="auto">
+                <BookIcon color="secondary" sx={{ fontSize: 28 }} />
+              </Grid>
+              <Grid size="grow">
+                <Typography variant="h5" fontWeight="bold" color="secondary">
+                  日記
+                </Typography>
+              </Grid>
+            </Grid>
 
-          {loading ? (
-            <Box display="flex" justifyContent="center" alignItems="center" sx={{ height: 200 }}>
-              <CircularProgress />
-            </Box>
-          ) : error ? (
-            <Alert severity="error">{error}</Alert>
-          ) : (
-            <Box
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
-              sx={{ height: '100%' }}
-            >
-              <Card
-                elevation={isSwiping ? 2 : 4}
-                sx={{
-                  p: 3,
-                  borderRadius: 3,
-                  bgcolor: 'white',
-                  transition: 'all 0.3s ease',
-                  transform: isSwiping ? 'scale(0.98)' : 'scale(1)',
-                  height: 'auto'
-                }}
+            {loading ? (
+              <Box display="flex" justifyContent="center" alignItems="center" sx={{ height: 200 }}>
+                <CircularProgress />
+              </Box>
+            ) : error ? (
+              <Alert severity="error">{error}</Alert>
+            ) : (
+              <Box
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                sx={{ height: '100%' }}
               >
-                {/* 日付ヘッダー */}
-                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
-                  <IconButton
-                    onClick={handlePrevDate}
-                    color="primary"
-                    size="small"
-                  >
-                    <NavigateBeforeIcon />
-                  </IconButton>
-                  
-                  <Typography variant="h6" fontWeight="bold" color="primary">
-                    {selectedDate.format('YYYY年 M月 D日 (dddd)')}
-                  </Typography>
-                  
-                  <IconButton
-                    onClick={handleNextDate}
-                    color="primary"
-                    size="small"
-                  >
-                    <NavigateNextIcon />
-                  </IconButton>
-                </Stack>
+                <Card
+                  elevation={isSwiping ? 2 : 4}
+                  sx={{
+                    p: 3,
+                    borderRadius: 3,
+                    bgcolor: 'white',
+                    transition: 'all 0.3s ease',
+                    transform: isSwiping ? 'scale(0.98)' : 'scale(1)',
+                    height: 'auto'
+                  }}
+                >
+                  {/* 日付ヘッダー */}
+                  <Grid container alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
+                    <Grid size="auto">
+                      <IconButton
+                        onClick={handlePrevDate}
+                        color="primary"
+                        size="small"
+                      >
+                        <NavigateBeforeIcon />
+                      </IconButton>
+                    </Grid>
+                    
+                    <Grid size="grow">
+                      <Typography variant="h6" fontWeight="bold" color="primary">
+                        {selectedDate.format('YYYY年 M月 D日 (dddd)')}
+                      </Typography>
+                    </Grid>
+                    
+                    <Grid size="auto">
+                      <IconButton
+                        onClick={handleNextDate}
+                        color="primary"
+                        size="small"
+                      >
+                        <NavigateNextIcon />
+                      </IconButton>
+                    </Grid>
+                  </Grid>
 
-                {/* 日記内容 */}
-                {selectedDiary ? (
-                  <Stack spacing={3}>
-                    {/* 要約 */}
-                    <Paper elevation={1} sx={{ p: 3, bgcolor: 'primary.50', borderRadius: 2 }}>
-                      <Stack direction="row" spacing={2} alignItems="flex-start">
-                        <BookIcon color="primary" sx={{ fontSize: 32, mt: 0.5 }} />
-                        <Box>
-                          <Typography variant="h6" fontWeight="bold" color="primary" sx={{ mb: 1 }}>
-                            要約
-                          </Typography>
-                          <Typography variant="body1" sx={{ lineHeight: 1.6 }}>
-                            {selectedDiary.summary}
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    </Paper>
+                  {/* 日記内容 */}
+                  {selectedDiary ? (
+                    <Grid container spacing={3}>
+                      {/* 要約 */}
+                      <Grid size="grow">
+                        <Paper elevation={1} sx={{ p: 3, bgcolor: 'primary.50', borderRadius: 2 }}>
+                          <Grid container direction="row" spacing={2} alignItems="flex-start">
+                            <Grid size="auto">
+                              <BookIcon color="primary" sx={{ fontSize: 32, mt: 0.5 }} />
+                            </Grid>
+                            <Grid size="grow">
+                              <Box>
+                                <Typography variant="h6" fontWeight="bold" color="primary" sx={{ mb: 1 }}>
+                                  要約
+                                </Typography>
+                                <Typography variant="body1" sx={{ lineHeight: 1.6 }}>
+                                  {selectedDiary.summary}
+                                </Typography>
+                              </Box>
+                            </Grid>
+                          </Grid>
+                        </Paper>
+                      </Grid>
 
-                    {/* コンテキスト */}
-                    {selectedDiary.context && selectedDiary.context.length > 0 && (
-                      <Paper elevation={1} sx={{ p: 3, bgcolor: 'secondary.50', borderRadius: 2 }}>
-                        <Typography variant="h6" fontWeight="bold" color="secondary" sx={{ mb: 2 }}>
-                          コンテキスト
-                        </Typography>
-                        <Stack spacing={2}>
-                          {selectedDiary.context.map((ctx, index) => (
-                            <Box key={index}>
-                              <Typography variant="subtitle2" fontWeight="semibold" color="text.secondary">
-                                {ctx.date}
-                              </Typography>
-                              <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mt: 1 }}>
-                                {ctx.time_of_day && (
-                                  <Chip label={`時間: ${ctx.time_of_day}`} size="small" />
-                                )}
-                                {ctx.location && (
-                                  <Chip label={`場所: ${ctx.location}`} size="small" />
-                                )}
-                                {ctx.companion && (
-                                  <Chip label={`同伴: ${ctx.companion}`} size="small" />
-                                )}
-                                {ctx.mood && (
-                                  <Chip label={`気分: ${ctx.mood}`} size="small" />
-                                )}
-                              </Stack>
-                            </Box>
-                          ))}
-                        </Stack>
-                      </Paper>
-                    )}
-                  </Stack>
-                ) : (
-                  <Box
-                    display="flex"
-                    flexDirection="column"
-                    alignItems="center"
-                    justifyContent="center"
-                    sx={{ py: 8 }}
-                  >
-                    <BookIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
-                    <Typography variant="h6" color="text.secondary" textAlign="center">
-                      この日の日記はありません
-                    </Typography>
-                    <Typography variant="body2" color="text.disabled" textAlign="center" sx={{ mt: 1 }}>
-                      日記を作成して記録を残しましょう
-                    </Typography>
-                  </Box>
-                )}
-              </Card>
-            </Box>
-          )}
-        </Paper>
-      </Stack>
-    </Container>
+                      {/* コンテキスト */}
+                      {selectedDiary.context && selectedDiary.context.length > 0 && (
+                        <Grid size="auto">
+                          <Paper elevation={1} sx={{ p: 3, bgcolor: 'secondary.50', borderRadius: 2 }}>
+                            <Typography variant="h6" fontWeight="bold" color="secondary" sx={{ mb: 2 }}>
+                              コンテキスト
+                            </Typography>
+                            <Grid container spacing={2}>
+                              {selectedDiary.context.map((ctx, index) => (
+                                <Grid key={index} size="auto">
+                                  <Box>
+                                    <Typography variant="subtitle2" fontWeight="semibold" color="text.secondary">
+                                      {ctx.date}
+                                    </Typography>
+                                    <Grid container direction="row" flexWrap="wrap" spacing={1} sx={{ mt: 1 }}>
+                                      {ctx.time_of_day && (
+                                        <Grid size="auto">
+                                          <Chip label={`時間: ${ctx.time_of_day}`} size="small" />
+                                        </Grid>
+                                      )}
+                                      {ctx.location && (
+                                        <Grid size="auto">
+                                          <Chip label={`場所: ${ctx.location}`} size="small" />
+                                        </Grid>
+                                      )}
+                                      {ctx.companion && (
+                                        <Grid size="auto">
+                                          <Chip label={`同伴: ${ctx.companion}`} size="small" />
+                                        </Grid>
+                                      )}
+                                      {ctx.mood && (
+                                        <Grid size="auto">
+                                          <Chip label={`気分: ${ctx.mood}`} size="small" />
+                                        </Grid>
+                                      )}
+                                    </Grid>
+                                  </Box>
+                                </Grid>
+                              ))}
+                            </Grid>
+                          </Paper>
+                        </Grid>
+                      )}
+                    </Grid>
+                  ) : (
+                    <Box
+                      display="flex"
+                      flexDirection="column"
+                      alignItems="center"
+                      justifyContent="center"
+                      sx={{ py: 8 }}
+                    >
+                      <BookIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
+                      <Typography variant="h6" color="text.secondary" textAlign="center">
+                        この日の日記はありません
+                      </Typography>
+                      <Typography variant="body2" color="text.disabled" textAlign="center" sx={{ mt: 1 }}>
+                        日記を作成して記録を残しましょう
+                      </Typography>
+                    </Box>
+                  )}
+                </Card>
+              </Box>
+            )}
+          </Paper>
+        </Grid>
+      </Grid>
+    </Box>
   );
 }
