@@ -1,4 +1,5 @@
 import "@/app/globals.css";
+import AuthGuard from "@/components/authGuard";
 import ClientThemeProvider from "@/components/clientThemeProvider";
 import Sidebar from "@/components/sidebar";
 import { Box } from '@mui/material';
@@ -29,12 +30,14 @@ export default function RootLayout({
     <html lang="ja">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <ClientThemeProvider>
-          <Box sx={{ display: 'flex', height: '100vh' }}>
-            <Sidebar />
-            <Box component="main" sx={{ flex: 1, ml: '240px' }}>
-              {children}
+          <AuthGuard>
+            <Box sx={{ display: 'flex', height: '100vh' }}>
+              <Sidebar />
+              <Box component="main" sx={{ flex: 1, ml: '240px' }}>
+                {children}
+              </Box>
             </Box>
-          </Box>
+          </AuthGuard>
         </ClientThemeProvider>
       </body>
     </html>

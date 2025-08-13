@@ -8,11 +8,15 @@ import {
 } from '@mui/icons-material';
 import {
   Alert,
-  Box, Button, Chip,
+  Box, Button,
   CircularProgress,
+  FormControl,
   Grid,
   IconButton,
+  InputLabel,
+  MenuItem,
   Paper,
+  Select,
   Stack,
   TextField,
   Typography
@@ -175,7 +179,6 @@ export default function ChatPanel() {
                 </Typography>
               </Grid>
             </Grid>
-            
             <Stack spacing={3}>
               <TextField
                 fullWidth
@@ -188,150 +191,133 @@ export default function ChatPanel() {
               />
               
               {/* 時間帯 */}
-              <Box>
-                <Typography variant="subtitle1" fontWeight="semibold" sx={{ mb: 1 }}>
-                  時間帯
-                </Typography>
-                <Stack direction="row" flexWrap="wrap" gap={1}>
+              <FormControl fullWidth>
+                <InputLabel>時間帯</InputLabel>
+                <Select
+                  value={context.time_of_day}
+                  label="時間帯"
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === 'その他') {
+                      setContext(c => ({ ...c, time_of_day: 'その他:' + other.time_of_day }));
+                    } else {
+                      setContext(c => ({ ...c, time_of_day: value }));
+                    }
+                  }}
+                >
                   {timeOfDayOptions.map(opt => (
-                    <Chip
-                      key={opt}
-                      label={opt}
-                      onClick={() => {
-                        if (opt === 'その他') {
-                          setContext(c => ({ ...c, time_of_day: 'その他:' + other.time_of_day }));
-                        } else {
-                          setContext(c => ({ ...c, time_of_day: opt }));
-                        }
-                      }}
-                      color={context.time_of_day.startsWith(opt) ? 'primary' : 'default'}
-                      variant={context.time_of_day.startsWith(opt) ? 'filled' : 'outlined'}
-                    />
+                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                   ))}
-                </Stack>
-                {context.time_of_day.startsWith('その他') && (
-                  <TextField
-                    fullWidth
-                    placeholder="その他の時間帯を入力"
-                    value={other.time_of_day}
-                    onChange={e => {
-                      setOther(o => ({ ...o, time_of_day: e.target.value }));
-                      setContext(c => ({ ...c, time_of_day: 'その他:' + e.target.value }));
-                    }}
-                    sx={{ mt: 2 }}
-                  />
-                )}
-              </Box>
+                </Select>
+              </FormControl>
+              {context.time_of_day.startsWith('その他') && (
+                <TextField
+                  fullWidth
+                  placeholder="その他の時間帯を入力"
+                  value={other.time_of_day}
+                  onChange={e => {
+                    setOther(o => ({ ...o, time_of_day: e.target.value }));
+                    setContext(c => ({ ...c, time_of_day: 'その他:' + e.target.value }));
+                  }}
+                />
+              )}
 
               {/* 場所 */}
-              <Box>
-                <Typography variant="subtitle1" fontWeight="semibold" sx={{ mb: 1 }}>
-                  場所
-                </Typography>
-                <Stack direction="row" flexWrap="wrap" gap={1}>
+              <FormControl fullWidth>
+                <InputLabel>場所</InputLabel>
+                <Select
+                  value={context.location}
+                  label="場所"
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === 'その他') {
+                      setContext(c => ({ ...c, location: 'その他:' + other.location }));
+                    } else {
+                      setContext(c => ({ ...c, location: value }));
+                    }
+                  }}
+                >
                   {locationOptions.map(opt => (
-                    <Chip
-                      key={opt}
-                      label={opt}
-                      onClick={() => {
-                        if (opt === 'その他') {
-                          setContext(c => ({ ...c, location: 'その他:' + other.location }));
-                        } else {
-                          setContext(c => ({ ...c, location: opt }));
-                        }
-                      }}
-                      color={context.location.startsWith(opt) ? 'primary' : 'default'}
-                      variant={context.location.startsWith(opt) ? 'filled' : 'outlined'}
-                    />
+                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                   ))}
-                </Stack>
-                {context.location.startsWith('その他') && (
-                  <TextField
-                    fullWidth
-                    placeholder="その他の場所を入力"
-                    value={other.location}
-                    onChange={e => {
-                      setOther(o => ({ ...o, location: e.target.value }));
-                      setContext(c => ({ ...c, location: 'その他:' + e.target.value }));
-                    }}
-                    sx={{ mt: 2 }}
-                  />
-                )}
-              </Box>
+                </Select>
+              </FormControl>
+              {context.location.startsWith('その他') && (
+                <TextField
+                  fullWidth
+                  placeholder="その他の場所を入力"
+                  value={other.location}
+                  onChange={e => {
+                    setOther(o => ({ ...o, location: e.target.value }));
+                    setContext(c => ({ ...c, location: 'その他:' + e.target.value }));
+                  }}
+                />
+              )}
 
               {/* 一緒にいる人 */}
-              <Box>
-                <Typography variant="subtitle1" fontWeight="semibold" sx={{ mb: 1 }}>
-                  一緒にいる人
-                </Typography>
-                <Stack direction="row" flexWrap="wrap" gap={1}>
+              <FormControl fullWidth>
+                <InputLabel>一緒にいる人</InputLabel>
+                <Select
+                  value={context.companion}
+                  label="一緒にいる人"
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === 'その他') {
+                      setContext(c => ({ ...c, companion: 'その他:' + other.companion }));
+                    } else {
+                      setContext(c => ({ ...c, companion: value }));
+                    }
+                  }}
+                >
                   {companionOptions.map(opt => (
-                    <Chip
-                      key={opt}
-                      label={opt}
-                      onClick={() => {
-                        if (opt === 'その他') {
-                          setContext(c => ({ ...c, companion: 'その他:' + other.companion }));
-                        } else {
-                          setContext(c => ({ ...c, companion: opt }));
-                        }
-                      }}
-                      color={context.companion.startsWith(opt) ? 'primary' : 'default'}
-                      variant={context.companion.startsWith(opt) ? 'filled' : 'outlined'}
-                    />
+                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                   ))}
-                </Stack>
-                {context.companion.startsWith('その他') && (
-                  <TextField
-                    fullWidth
-                    placeholder="その他の人を入力"
-                    value={other.companion}
-                    onChange={e => {
-                      setOther(o => ({ ...o, companion: e.target.value }));
-                      setContext(c => ({ ...c, companion: 'その他:' + e.target.value }));
-                    }}
-                    sx={{ mt: 2 }}
-                  />
-                )}
-              </Box>
+                </Select>
+              </FormControl>
+              {context.companion.startsWith('その他') && (
+                <TextField
+                  fullWidth
+                  placeholder="その他の人を入力"
+                  value={other.companion}
+                  onChange={e => {
+                    setOther(o => ({ ...o, companion: e.target.value }));
+                    setContext(c => ({ ...c, companion: 'その他:' + e.target.value }));
+                  }}
+                />
+              )}
 
               {/* 気分 */}
-              <Box>
-                <Typography variant="subtitle1" fontWeight="semibold" sx={{ mb: 1 }}>
-                  気分
-                </Typography>
-                <Stack direction="row" flexWrap="wrap" gap={1}>
+              <FormControl fullWidth>
+                <InputLabel>気分</InputLabel>
+                <Select
+                  value={context.mood}
+                  label="気分"
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === 'その他') {
+                      setContext(c => ({ ...c, mood: 'その他:' + other.mood }));
+                    } else {
+                      setContext(c => ({ ...c, mood: value }));
+                    }
+                  }}
+                >
                   {moodOptions.map(opt => (
-                    <Chip
-                      key={opt}
-                      label={opt}
-                      onClick={() => {
-                        if (opt === 'その他') {
-                          setContext(c => ({ ...c, mood: 'その他:' + other.mood }));
-                        } else {
-                          setContext(c => ({ ...c, mood: opt }));
-                        }
-                      }}
-                      color={context.mood.startsWith(opt) ? 'primary' : 'default'}
-                      variant={context.mood.startsWith(opt) ? 'filled' : 'outlined'}
-                    />
+                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                   ))}
-                </Stack>
-                {context.mood.startsWith('その他') && (
-                  <TextField
-                    fullWidth
-                    placeholder="その他の気分を入力"
-                    value={other.mood}
-                    onChange={e => {
-                      setOther(o => ({ ...o, mood: e.target.value }));
-                      setContext(c => ({ ...c, mood: 'その他:' + e.target.value }));
-                    }}
-                    sx={{ mt: 2 }}
-                  />
-                )}
-              </Box>
+                </Select>
+              </FormControl>
+              {context.mood.startsWith('その他') && (
+                <TextField
+                  fullWidth
+                  placeholder="その他の気分を入力"
+                  value={other.mood}
+                  onChange={e => {
+                    setOther(o => ({ ...o, mood: e.target.value }));
+                    setContext(c => ({ ...c, mood: 'その他:' + e.target.value }));
+                  }}
+                />
+              )}
             </Stack>
-
             <Button
               fullWidth
               variant="contained"

@@ -3,12 +3,12 @@
 import {
   Edit as EditIcon,
   Home as HomeIcon,
-  Info as InfoIcon,
-  Person as PersonIcon,
-  Settings as SettingsIcon
+  Logout as LogoutIcon,
+  Person as PersonIcon
 } from '@mui/icons-material';
 import {
   Box,
+  Divider,
   Grid,
   List,
   ListItem,
@@ -19,24 +19,49 @@ import {
   Typography
 } from '@mui/material';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { isLoggedIn, logoutUser, removeToken } from '../utils/auth';
 
 const linkNames: { [key: string]: string } = {
   Profile: 'プロフィール',
   Home: 'ホーム',
-  Information: '情報',
-  Setting: '設定',
 };
 
 const navItems = [
   { href: '/profile', icon: <PersonIcon />, label: linkNames.Profile },
   { href: '/', icon: <HomeIcon />, label: linkNames.Home },
-  { href: '/information', icon: <InfoIcon />, label: linkNames.Information },
-  { href: '/setting', icon: <SettingsIcon />, label: linkNames.Setting },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [authenticated, setAuthenticated] = useState(false);
+
+  useEffect(() => {
+    // 認証状態をチェック
+    setAuthenticated(isLoggedIn());
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      removeToken();
+      setAuthenticated(false);
+      router.push('/auth');
+    } catch (error) {
+      console.error('ログアウトエラー:', error);
+      // エラーが発生してもローカルからトークンを削除
+      removeToken();
+      setAuthenticated(false);
+      router.push('/auth');
+    }
+  };
+
+  // 認証されていない場合はサイドバーを表示しない
+  if (!authenticated) {
+    return null;
+  }
 
   return (
     <Paper
@@ -112,6 +137,37 @@ export default function Sidebar() {
             </ListItem>
           ))}
         </List>
+      </Box>
+
+      <Divider />
+
+      {/* ログアウトボタン */}
+      <Box sx={{ p: 2 }}>
+        <ListItemButton
+          onClick={handleLogout}
+          sx={{
+            borderRadius: 2,
+            '&:hover': {
+              bgcolor: 'error.light',
+              color: 'error.main',
+            },
+          }}
+        >
+          <ListItemIcon
+            sx={{
+              color: 'error.main',
+              minWidth: 40,
+            }}
+          >
+            <LogoutIcon />
+          </ListItemIcon>
+          <ListItemText
+            primary="ログアウト"
+            primaryTypographyProps={{
+              fontWeight: 'bold',
+            }}
+          />
+        </ListItemButton>
       </Box>
 
       {/* フッター */}
