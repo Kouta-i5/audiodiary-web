@@ -1,9 +1,9 @@
 'use client';
 
+import { getCurrentUser, isLoggedIn } from '@/utils/auth';
 import { Box, CircularProgress } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { getCurrentUser, isLoggedIn } from '../utils/auth';
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();

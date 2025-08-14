@@ -1,5 +1,6 @@
 'use client';
 
+import { loginUser, registerUser, saveToken } from '@/utils/auth';
 import {
     Email as EmailIcon,
     Lock as LockIcon,
@@ -23,7 +24,6 @@ import {
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { loginUser, registerUser, saveToken } from '../../utils/auth';
 
 interface TabPanelProps {
   children?: React.ReactNode;

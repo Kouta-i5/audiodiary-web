@@ -1,5 +1,6 @@
 'use client';
 
+import { getCurrentUser } from '@/utils/auth';
 import {
     CalendarToday as CalendarIcon,
     CheckCircle as CheckCircleIcon,
@@ -21,7 +22,6 @@ import {
     Typography
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { getCurrentUser } from '../../utils/auth';
 
 interface UserProfile {
   user_id: number;
