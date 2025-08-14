@@ -1,7 +1,5 @@
 'use client';
 
-import { fetchDiaries } from '@/utils/api';
-import { DiaryResponse } from '@/utils/schemas';
 import {
   Book as BookIcon,
   CalendarToday as CalendarIcon,
@@ -24,6 +22,8 @@ import {
 } from '@mui/material';
 import dayjs, { Dayjs } from 'dayjs';
 import { useEffect, useState } from 'react';
+import { fetchDiaries } from '../../utils/api';
+import { DiaryResponse } from '../../utils/schemas';
 
 export default function CalendarPanel() {
   const [selectedDate, setSelectedDate] = useState<Dayjs>(dayjs());

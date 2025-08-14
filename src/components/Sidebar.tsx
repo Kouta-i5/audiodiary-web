@@ -1,6 +1,5 @@
 'use client';
 
-import { isLoggedIn, logoutUser, removeToken } from '@/utils/auth';
 import {
   Edit as EditIcon,
   Home as HomeIcon,
@@ -22,6 +21,7 @@ import {
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { isLoggedIn, logoutUser, removeToken } from '../utils/auth';
 
 const linkNames: { [key: string]: string } = {
   Profile: 'プロフィール',

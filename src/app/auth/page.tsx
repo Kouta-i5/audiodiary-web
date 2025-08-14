@@ -1,29 +1,29 @@
 'use client';
 
-import { loginUser, registerUser, saveToken } from '@/utils/auth';
 import {
-    Email as EmailIcon,
-    Lock as LockIcon,
-    Person as PersonIcon,
-    Visibility,
-    VisibilityOff
+  Email as EmailIcon,
+  Lock as LockIcon,
+  Person as PersonIcon,
+  Visibility,
+  VisibilityOff
 } from '@mui/icons-material';
 import {
-    Alert,
-    Box,
-    Button,
-    Container,
-    Grid,
-    IconButton,
-    InputAdornment,
-    Paper,
-    Tab,
-    Tabs,
-    TextField,
-    Typography
+  Alert,
+  Box,
+  Button,
+  Container,
+  Grid,
+  IconButton,
+  InputAdornment,
+  Paper,
+  Tab,
+  Tabs,
+  TextField,
+  Typography
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { loginUser, registerUser, saveToken } from '../../utils/auth';
 
 interface TabPanelProps {
   children?: React.ReactNode;

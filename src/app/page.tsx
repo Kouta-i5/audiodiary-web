@@ -1,8 +1,8 @@
 'use client';
 
-import CalendarPanel from '@/components/home/calendarPanel';
-import ChatPanel from '@/components/home/chatPanel';
 import { Box, Grid } from '@mui/material';
+import CalendarPanel from '../components/home/calendarPanel';
+import ChatPanel from '../components/home/chatPanel';
 
 export default function HomePage() {
   return (

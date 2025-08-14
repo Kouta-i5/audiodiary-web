@@ -1,7 +1,5 @@
 'use client';
 
-import { fetchMessage, fetchSummary, saveDiary, setChatContext } from '@/utils/api';
-import { DiaryRequest } from '@/utils/schemas';
 import {
   Note as NoteIcon,
   Save as SaveIcon,
@@ -24,6 +22,8 @@ import {
   Typography
 } from '@mui/material';
 import { useState } from 'react';
+import { fetchMessage, fetchSummary, saveDiary, setChatContext } from '../../utils/api';
+import { DiaryRequest } from '../../utils/schemas';
 
 // 今日の日付をYYYY-MM-DD形式で取得
 const getToday = () => {

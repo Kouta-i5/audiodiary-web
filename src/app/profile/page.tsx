@@ -1,27 +1,27 @@
 'use client';
 
-import { getCurrentUser } from '@/utils/auth';
 import {
-    CalendarToday as CalendarIcon,
-    CheckCircle as CheckCircleIcon,
-    Edit as EditIcon,
-    Email as EmailIcon,
-    Person as PersonIcon
+  CalendarToday as CalendarIcon,
+  CheckCircle as CheckCircleIcon,
+  Edit as EditIcon,
+  Email as EmailIcon,
+  Person as PersonIcon
 } from '@mui/icons-material';
 import {
-    Alert,
-    Avatar,
-    Box,
-    Card,
-    CardContent,
-    Chip,
-    Grid,
-    IconButton,
-    Paper,
-    Skeleton,
-    Typography
+  Alert,
+  Avatar,
+  Box,
+  Card,
+  CardContent,
+  Chip,
+  Grid,
+  IconButton,
+  Paper,
+  Skeleton,
+  Typography
 } from '@mui/material';
 import { useEffect, useState } from 'react';
+import { getCurrentUser } from '../../utils/auth';
 
 interface UserProfile {
   user_id: number;
