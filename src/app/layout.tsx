@@ -19,6 +19,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "AudioDiary",
   description: "音声日記アプリケーション",
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
