@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import AuthGuard from "../components/authGuard";
 import ClientThemeProvider from "../components/clientThemeProvider";
-import Sidebar from "../components/sidebar";
+import Sidebar from "../components/Sidebar";
 import "./globals.css";
 
 const geistSans = Geist({
