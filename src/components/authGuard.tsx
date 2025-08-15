@@ -13,6 +13,14 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // デバッグ情報を追加
+        const token = localStorage.getItem('access_token');
+        console.log('認証チェック開始:', { 
+          hasToken: !!token, 
+          tokenLength: token?.length,
+          tokenPreview: token ? `${token.substring(0, 20)}...` : 'なし'
+        });
+
         // トークンの存在チェック
         if (isLoggedIn()) {
           // トークンが有効かどうかサーバーで確認
@@ -34,6 +42,13 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, []);
 
+  // 認証されていない場合は、useEffect内でリダイレクト
+  useEffect(() => {
+    if (!loading && !authenticated) {
+      router.push('/auth');
+    }
+  }, [loading, authenticated, router]);
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -43,7 +58,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   }
 
   if (!authenticated) {
-    router.push('/auth');
     return null;
   }
 

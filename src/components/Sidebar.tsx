@@ -3,12 +3,10 @@
 import {
   Edit as EditIcon,
   Home as HomeIcon,
-  Logout as LogoutIcon,
   Person as PersonIcon
 } from '@mui/icons-material';
 import {
   Box,
-  Divider,
   Grid,
   List,
   ListItem,
@@ -19,9 +17,8 @@ import {
   Typography
 } from '@mui/material';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { isLoggedIn, logoutUser, removeToken } from '../utils/auth';
+import { usePathname } from 'next/navigation';
+
 
 const linkNames: { [key: string]: string } = {
   Profile: 'プロフィール',
@@ -35,33 +32,6 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const [authenticated, setAuthenticated] = useState(false);
-
-  useEffect(() => {
-    // 認証状態をチェック
-    setAuthenticated(isLoggedIn());
-  }, []);
-
-  const handleLogout = async () => {
-    try {
-      await logoutUser();
-      removeToken();
-      setAuthenticated(false);
-      router.push('/auth');
-    } catch (error) {
-      console.error('ログアウトエラー:', error);
-      // エラーが発生してもローカルからトークンを削除
-      removeToken();
-      setAuthenticated(false);
-      router.push('/auth');
-    }
-  };
-
-  // 認証されていない場合はサイドバーを表示しない
-  if (!authenticated) {
-    return null;
-  }
 
   return (
     <Paper
@@ -139,36 +109,7 @@ export default function Sidebar() {
         </List>
       </Box>
 
-      <Divider />
 
-      {/* ログアウトボタン */}
-      <Box sx={{ p: 2 }}>
-        <ListItemButton
-          onClick={handleLogout}
-          sx={{
-            borderRadius: 2,
-            '&:hover': {
-              bgcolor: 'error.light',
-              color: 'error.main',
-            },
-          }}
-        >
-          <ListItemIcon
-            sx={{
-              color: 'error.main',
-              minWidth: 40,
-            }}
-          >
-            <LogoutIcon />
-          </ListItemIcon>
-          <ListItemText
-            primary="ログアウト"
-            primaryTypographyProps={{
-              fontWeight: 'bold',
-            }}
-          />
-        </ListItemButton>
-      </Box>
 
       {/* フッター */}
       <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>

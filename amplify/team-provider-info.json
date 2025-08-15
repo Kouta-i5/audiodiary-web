@@ -10,6 +10,14 @@
       "StackName": "amplify-audiodiaryweb-dev-06e34",
       "StackId": "arn:aws:cloudformation:ap-northeast-1:396547287229:stack/amplify-audiodiaryweb-dev-06e34/86821da0-7801-11f0-beb5-0a240ad65715",
       "AmplifyAppId": "d399n6i2ahy6cd"
+    },
+    "categories": {
+      "hosting": {
+        "amplifyhosting": {
+          "appId": "d399n6i2ahy6cd",
+          "type": "cicd"
+        }
+      }
     }
   }
 }

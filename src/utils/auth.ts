@@ -77,6 +77,12 @@ export const getCurrentUser = async (): Promise<UserSchema> => {
       throw new Error('トークンがありません');
     }
 
+    console.log('APIリクエスト送信:', {
+      url: '/auth/me',
+      token: `${token.substring(0, 20)}...`,
+      headers: { 'Authorization': `Bearer ${token.substring(0, 20)}...` }
+    });
+
     const response = await authApi.get('/auth/me', {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -85,6 +91,12 @@ export const getCurrentUser = async (): Promise<UserSchema> => {
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
+      console.error('APIエラー詳細:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message
+      });
       throw new Error(error.response?.data?.detail || 'ユーザー情報の取得に失敗しました');
     }
     throw new Error('ユーザー情報の取得に失敗しました');
