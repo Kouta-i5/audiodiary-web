@@ -1,23 +1,49 @@
 'use client';
 
-import { Box, Grid } from '@mui/material';
-import CalendarPanel from '../components/home/CalendarPanel';
-import ChatPanel from '../components/home/ChatPanel';
+import { Box, Paper, Typography } from '@mui/material';
+import CalendarPanel from '../components/home/calendarPanel';
+import ChatPanel from '../components/home/chatPanel';
 
 export default function HomePage() {
   return (
-      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-        {/* メイン2分割 - MUI v7 Gridを使用 */}
-        <Grid container spacing={0} sx={{ flex: 1, overflow: 'hidden' }}>
-          {/* 左側: チャットパネル */}
-          <Grid size={6} sx={{ height: '100%', p: 2, overflow: 'hidden' }}>
-            <ChatPanel />
-          </Grid>
-          {/* 右側: カレンダーパネル */}
-          <Grid size={6} sx={{ height: '100%', p: 2, overflow: 'hidden' }}>
-            <CalendarPanel />
-          </Grid>
-        </Grid>
+    <Box sx={{ height: 'calc(100vh - 48px)', display: 'flex', gap: 3, flexDirection: { xs: 'column', lg: 'row' } }}>
+      {/* 左側: チャットパネル */}
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
+          チャット
+        </Typography>
+        <Paper
+          elevation={2}
+          sx={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            borderRadius: 2,
+          }}
+        >
+          <ChatPanel />
+        </Paper>
       </Box>
+
+      {/* 右側: カレンダーパネル */}
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
+          カレンダー
+        </Typography>
+        <Paper
+          elevation={2}
+          sx={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            borderRadius: 2,
+          }}
+        >
+          <CalendarPanel />
+        </Paper>
+      </Box>
+    </Box>
   );
 }

@@ -3,34 +3,57 @@
 import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 
-// MUIテーマの作成
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1976d2',
+      main: '#10b981', // すうい緑
+      light: '#34d399',
+      dark: '#059669',
+      contrastText: '#ffffff',
     },
     secondary: {
-      main: '#dc004e',
+      main: '#6366f1',
+      light: '#818cf8',
+      dark: '#4f46e5',
     },
     background: {
-      default: '#e8f5e9',
+      default: '#f5f5f5',
       paper: '#ffffff',
     },
   },
   typography: {
-    fontFamily: 'var(--font-geist-sans), Roboto, Helvetica, Arial, sans-serif',
+    fontFamily: [
+      'Roboto',
+      'Helvetica',
+      'Arial',
+      'sans-serif',
+    ].join(','),
+  },
+  shape: {
+    borderRadius: 8,
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+          fontWeight: 600,
+        },
+      },
+    },
   },
 });
 
-interface ClientThemeProviderProps {
+export default function ClientThemeProvider({
+  children,
+}: {
   children: React.ReactNode;
-}
-
-export default function ClientThemeProvider({ children }: ClientThemeProviderProps) {
+}) {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       {children}
     </ThemeProvider>
   );
-} 
+}
+

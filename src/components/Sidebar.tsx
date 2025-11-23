@@ -1,13 +1,13 @@
 'use client';
 
 import {
+  CalendarToday as CalendarIcon,
   Edit as EditIcon,
   Home as HomeIcon,
-  Person as PersonIcon
+  Person as PersonIcon,
 } from '@mui/icons-material';
 import {
   Box,
-  Grid,
   List,
   ListItem,
   ListItemButton,
@@ -19,15 +19,16 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-
 const linkNames: { [key: string]: string } = {
   Profile: 'プロフィール',
   Home: 'ホーム',
+  Calendar: 'カレンダー',
 };
 
 const navItems = [
   { href: '/profile', icon: <PersonIcon />, label: linkNames.Profile },
   { href: '/', icon: <HomeIcon />, label: linkNames.Home },
+  { href: '/calendar', icon: <CalendarIcon />, label: linkNames.Calendar },
 ];
 
 export default function Sidebar() {
@@ -37,84 +38,113 @@ export default function Sidebar() {
     <Paper
       elevation={3}
       sx={{
-        position: 'fixed',
+        position: 'sticky',
         top: 0,
-        left: 0,
         height: '100vh',
-        width: 240,
-        bgcolor: 'background.paper',
-        zIndex: 40,
+        width: 256,
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        borderRadius: 0,
+        borderRight: '1px solid',
+        borderColor: 'divider',
       }}
     >
-      {/* ロゴ・アプリ名 - MUI v7 Gridを使用 */}
+      {/* ロゴ・アプリ名 */}
       <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider' }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid size="auto">
-            <EditIcon sx={{ fontSize: 32, color: 'primary.main' }} />
-          </Grid>
-          <Grid size="grow">
-            <Typography variant="h6" fontWeight="bold" color="text.primary">
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 48,
+              height: 48,
+              borderRadius: 2,
+              bgcolor: 'primary.light',
+              color: 'primary.main',
+            }}
+          >
+            <EditIcon />
+          </Box>
+          <Box>
+            <Typography variant="h6" fontWeight="bold" noWrap>
               AI-Diary
             </Typography>
-          </Grid>
-        </Grid>
+            <Typography variant="caption" color="text.secondary">
+              Your daily companion
+            </Typography>
+          </Box>
+        </Box>
       </Box>
 
       {/* メニュー */}
       <Box sx={{ flex: 1, py: 2 }}>
-        <List>
-          {navItems.map((item) => (
-            <ListItem key={item.href} disablePadding>
-              <ListItemButton
-                component={Link}
-                href={item.href}
-                selected={pathname === item.href}
-                sx={{
-                  mx: 1,
-                  borderRadius: 2,
-                  '&.Mui-selected': {
-                    bgcolor: 'primary.light',
-                    color: 'primary.main',
-                    '&:hover': {
-                      bgcolor: 'primary.light',
-                    },
-                    '& .MuiListItemIcon-root': {
-                      color: 'primary.main',
-                    },
-                  },
-                  '&:hover': {
-                    bgcolor: 'action.hover',
-                  },
-                }}
-              >
-                <ListItemIcon
+        <Typography
+          variant="caption"
+          sx={{
+            px: 3,
+            pb: 1,
+            display: 'block',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: 1,
+            color: 'text.secondary',
+          }}
+        >
+          メニュー
+        </Typography>
+        <List sx={{ px: 1 }}>
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <ListItem key={item.href} disablePadding>
+                <ListItemButton
+                  component={Link}
+                  href={item.href}
+                  selected={isActive}
                   sx={{
-                    color: pathname === item.href ? 'primary.main' : 'text.secondary',
-                    minWidth: 40,
+                    mx: 1,
+                    borderRadius: 2,
+                    '&.Mui-selected': {
+                      bgcolor: 'primary.main',
+                      color: 'primary.contrastText',
+                      '&:hover': {
+                        bgcolor: 'primary.dark',
+                      },
+                      '& .MuiListItemIcon-root': {
+                        color: 'primary.contrastText',
+                      },
+                    },
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                    },
                   }}
                 >
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.label}
-                  primaryTypographyProps={{
-                    fontWeight: pathname === item.href ? 'bold' : 'normal',
-                  }}
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
+                  <ListItemIcon
+                    sx={{
+                      color: isActive ? 'primary.contrastText' : 'text.secondary',
+                      minWidth: 40,
+                    }}
+                  >
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.label}
+                    primaryTypographyProps={{
+                      fontWeight: isActive ? 600 : 400,
+                    }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            );
+          })}
         </List>
       </Box>
 
-
-
       {/* フッター */}
       <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
-        <Typography variant="caption" color="text.secondary" textAlign="center">
-          &copy; {new Date().getFullYear()} AudioDiary
+        <Typography variant="caption" color="text.secondary" align="center" display="block">
+          © {new Date().getFullYear()} AudioDiary
         </Typography>
       </Box>
     </Paper>

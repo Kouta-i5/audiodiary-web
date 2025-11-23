@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
     };
     return config;
   },
+  // MUI v7とReact 19の互換性問題を回避
+  transpilePackages: ['@mui/material', '@mui/system', '@mui/icons-material'],
 };
 
 export default nextConfig;
