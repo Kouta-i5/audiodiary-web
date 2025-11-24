@@ -543,11 +543,12 @@ export default function CalendarPanel({ onDateSelect, onMonthChange }: CalendarP
           </Box>
 
           {/* カレンダーグリッド */}
-          <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
+          <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
             <Paper
               elevation={2}
               sx={{
-                overflow: 'auto',
+                overflowY: 'auto',
+                overflowX: 'hidden',
                 width: '100%',
                 maxWidth: '1400px',
                 height: '100%',
@@ -561,10 +562,11 @@ export default function CalendarPanel({ onDateSelect, onMonthChange }: CalendarP
               sx={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(7, 1fr)',
-                borderBottom: 1,
+                borderBottom: 2,
                 borderColor: 'divider',
-                bgcolor: 'grey.50',
+                background: 'linear-gradient(180deg, #ffffff 0%, #fafafa 100%)',
                 width: '100%',
+                flexShrink: 0,
               }}
             >
               {['日', '月', '火', '水', '木', '金', '土'].map((day, index) => (
@@ -573,10 +575,12 @@ export default function CalendarPanel({ onDateSelect, onMonthChange }: CalendarP
                   sx={{
                     p: 1.5,
                     textAlign: 'center',
-                    fontWeight: 600,
+                    fontWeight: 700,
+                    fontSize: '0.875rem',
                     color: index === 0 ? 'error.main' : index === 6 ? 'primary.main' : 'text.primary',
                     minWidth: 0,
                     overflow: 'hidden',
+                    letterSpacing: '0.05em',
                   }}
                 >
                   {day}
@@ -621,15 +625,23 @@ export default function CalendarPanel({ onDateSelect, onMonthChange }: CalendarP
                         height: '100%',
                         border: 1,
                         borderColor: 'divider',
-                        bgcolor: isCurrentMonth ? 'background.paper' : 'grey.50',
-                        p: 0.5,
+                        bgcolor: isCurrentMonth
+                          ? isToday
+                            ? 'rgba(25, 118, 210, 0.04)'
+                            : 'background.paper'
+                          : 'grey.50',
+                        p: 0.75,
                         cursor: 'pointer',
                         position: 'relative',
                         overflow: 'hidden',
                         display: 'flex',
                         flexDirection: 'column',
+                        transition: 'all 0.2s ease',
                         '&:hover': {
-                          bgcolor: 'action.hover',
+                          bgcolor: isToday ? 'rgba(25, 118, 210, 0.08)' : 'action.hover',
+                          transform: 'scale(1.01)',
+                          boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.08)',
+                          zIndex: 1,
                         },
                       }}
                     >
@@ -657,18 +669,47 @@ export default function CalendarPanel({ onDateSelect, onMonthChange }: CalendarP
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25, width: '100%', minWidth: 0, flex: 1, overflow: 'hidden' }}>
                         {dayEvents.slice(0, maxEventsPerDay).map((event) => {
                           const isAllDay = !event.start.dateTime && !!event.start.date;
+                          const isAudioDiary = event.summary?.includes('AudioDiary');
                           const timeText = isAllDay ? '終日' : dayjs(event.start.dateTime).format('HH:mm');
+                          
+                          // イベントIDに基づいて色を決定（Google Calendar風の24色）
+                          const eventColors = [
+                            { bg: '#4285f4', hover: '#3367d6' }, // 青
+                            { bg: '#34a853', hover: '#2e7d32' }, // 緑
+                            { bg: '#fbbc04', hover: '#f9ab00' }, // 黄色
+                            { bg: '#ea4335', hover: '#d33b2c' }, // 赤
+                            { bg: '#9c27b0', hover: '#7b1fa2' }, // 紫
+                            { bg: '#ff9800', hover: '#f57c00' }, // オレンジ
+                            { bg: '#00acc1', hover: '#0097a7' }, // シアン
+                            { bg: '#8bc34a', hover: '#7cb342' }, // ライトグリーン
+                            { bg: '#ff5722', hover: '#e64a19' }, // ディープオレンジ
+                            { bg: '#607d8b', hover: '#546e7a' }, // ブルーグレー
+                            { bg: '#e91e63', hover: '#c2185b' }, // ピンク
+                            { bg: '#3f51b5', hover: '#303f9f' }, // インディゴ
+                          ];
+                          
+                          // AudioDiaryは特別な色
+                          let eventColor = isAudioDiary
+                            ? { bg: '#6366f1', hover: '#4f46e5' } // インディゴ系
+                            : eventColors[Math.abs(event.id.charCodeAt(0) % eventColors.length)];
+                          
+                          // 終日イベントは少し濃く
+                          if (isAllDay && !isAudioDiary) {
+                            eventColor = { bg: '#1a73e8', hover: '#1557b0' };
+                          }
+                          
                           return (
                             <Box
                               key={event.id}
                               onClick={(e) => handleEventClick(event, e)}
                               sx={{
-                                bgcolor: isAllDay ? 'success.main' : 'primary.main',
+                                bgcolor: eventColor.bg,
                                 color: 'white',
-                                px: 0.5,
-                                py: 0.25,
-                                borderRadius: 0.5,
+                                px: 0.75,
+                                py: 0.35,
+                                borderRadius: 1,
                                 fontSize: '0.75rem',
+                                fontWeight: 500,
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
@@ -676,8 +717,12 @@ export default function CalendarPanel({ onDateSelect, onMonthChange }: CalendarP
                                 width: '100%',
                                 minWidth: 0,
                                 maxWidth: '100%',
+                                transition: 'all 0.2s ease',
+                                boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.1)',
                                 '&:hover': {
-                                  bgcolor: isAllDay ? 'success.dark' : 'primary.dark',
+                                  bgcolor: eventColor.hover,
+                                  transform: 'translateY(-1px)',
+                                  boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.15)',
                                 },
                               }}
                               title={`${timeText} ${event.summary}`}

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import ClientThemeProvider from "../components/clientThemeProvider";
-import ConditionalLayout from "../components/ConditionalLayout";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -20,9 +19,7 @@ export default function RootLayout({
     <html lang="ja">
       <body>
         <ClientThemeProvider>
-          <ConditionalLayout>
-            {children}
-          </ConditionalLayout>
+          {children}
         </ClientThemeProvider>
       </body>
     </html>

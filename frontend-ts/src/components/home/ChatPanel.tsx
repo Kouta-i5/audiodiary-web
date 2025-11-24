@@ -331,7 +331,7 @@ export default function ChatPanel({ selectedDate }: ChatPanelProps) {
   };
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 3 }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 3, overflow: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <ChatIcon color="primary" sx={{ fontSize: 32 }} />
@@ -380,10 +380,23 @@ export default function ChatPanel({ selectedDate }: ChatPanelProps) {
                   </Typography>
                 </Paper>
               ) : (
-                <Paper variant="outlined" sx={{ maxHeight: 200, overflowY: 'auto' }}>
-                  <List dense>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    maxHeight: 200,
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.06)',
+                    width: '100%',
+                    maxWidth: '100%',
+                  }}
+                >
+                  <List dense sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
                     {events.map((event) => {
                       const isSelected = selectedEvents.has(event.id);
+                      const isAudioDiary = event.summary?.includes('AudioDiary');
                       const timeText = event.start.date
                         ? '終日'
                         : event.start.dateTime
@@ -395,7 +408,17 @@ export default function ChatPanel({ selectedDate }: ChatPanelProps) {
                           key={event.id}
                           sx={{
                             cursor: 'pointer',
-                            '&:hover': { bgcolor: 'action.hover' },
+                            bgcolor: isSelected ? 'action.selected' : 'transparent',
+                            transition: 'all 0.2s ease',
+                            borderLeft: isSelected ? '3px solid' : '3px solid transparent',
+                            borderColor: isSelected ? 'primary.main' : 'transparent',
+                            width: '100%',
+                            maxWidth: '100%',
+                            boxSizing: 'border-box',
+                            '&:hover': {
+                              bgcolor: isSelected ? 'action.selected' : 'action.hover',
+                              transform: 'translateX(2px)',
+                            },
                           }}
                           onClick={() => handleEventToggle(event.id)}
                         >
@@ -407,25 +430,76 @@ export default function ChatPanel({ selectedDate }: ChatPanelProps) {
                             }}
                             onClick={(e) => e.stopPropagation()}
                             size="small"
+                            sx={{
+                              color: 'primary.main',
+                              '&.Mui-checked': {
+                                color: 'primary.main',
+                              },
+                            }}
                           />
                           <ListItemText
                             primary={event.summary}
-                            primaryTypographyProps={{ component: 'div', fontWeight: 500 }}
-                            secondaryTypographyProps={{ component: 'div' }}
+                            primaryTypographyProps={{
+                              component: 'div',
+                              fontWeight: isSelected ? 600 : 500,
+                              color: isAudioDiary && isSelected ? 'secondary.main' : 'text.primary',
+                              sx: {
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              },
+                            }}
+                            secondaryTypographyProps={{
+                              component: 'div',
+                              sx: {
+                                overflow: 'hidden',
+                              },
+                            }}
                             secondary={
-                              <Box>
+                              <Box sx={{ width: '100%', overflow: 'hidden' }}>
                                 {timeText && (
-                                  <Typography variant="caption" display="block">
+                                  <Typography
+                                    variant="caption"
+                                    display="block"
+                                    sx={{
+                                      color: isAudioDiary ? 'secondary.main' : 'text.secondary',
+                                      fontWeight: 500,
+                                      mt: 0.25,
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                    }}
+                                  >
                                     {timeText}
                                   </Typography>
                                 )}
                                 {event.description && (
-                                  <Typography variant="caption" color="text.secondary" display="block">
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    display="block"
+                                    sx={{
+                                      mt: 0.25,
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                    }}
+                                  >
                                     {event.description}
                                   </Typography>
                                 )}
                                 {event.location && (
-                                  <Typography variant="caption" color="text.secondary" display="block">
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    display="block"
+                                    sx={{
+                                      mt: 0.25,
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                    }}
+                                  >
                                     場所: {event.location}
                                   </Typography>
                                 )}
@@ -459,13 +533,14 @@ export default function ChatPanel({ selectedDate }: ChatPanelProps) {
             <Paper
               variant="outlined"
               sx={{
-                p: 1.5,
+                p: 2,
                 mb: 2,
-                bgcolor: 'primary.light',
-                color: 'primary.contrastText',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                boxShadow: '0px 4px 12px rgba(102, 126, 234, 0.3)',
               }}
             >
-              <Typography variant="caption" fontWeight={600} sx={{ mb: 0.5, display: 'block' }}>
+              <Typography variant="caption" fontWeight={700} sx={{ mb: 1, display: 'block', opacity: 0.95 }}>
                 話している予定:
               </Typography>
               {selectedEventsForChat.map((event, index) => {
@@ -475,17 +550,40 @@ export default function ChatPanel({ selectedDate }: ChatPanelProps) {
                   ? `${dayjs(event.start.dateTime).format('HH:mm')} - ${dayjs(event.end?.dateTime).format('HH:mm')}`
                   : '';
                 return (
-                  <Typography
+                  <Box
                     key={index}
-                    variant="body2"
                     sx={{
-                      fontSize: '0.875rem',
-                      mb: index < selectedEventsForChat.length - 1 ? 0.5 : 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      mb: index < selectedEventsForChat.length - 1 ? 1 : 0,
+                      bgcolor: 'rgba(255, 255, 255, 0.15)',
+                      px: 1.5,
+                      py: 0.75,
+                      borderRadius: 1,
+                      backdropFilter: 'blur(10px)',
                     }}
                   >
-                    • {timeText && `${timeText} `}{event.summary}
-                    {event.location && ` (${event.location})`}
-                  </Typography>
+                    <Box
+                      sx={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        bgcolor: 'white',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontSize: '0.875rem',
+                        fontWeight: 500,
+                      }}
+                    >
+                      {timeText && `${timeText} `}{event.summary}
+                      {event.location && ` • ${event.location}`}
+                    </Typography>
+                  </Box>
                 );
               })}
             </Paper>
@@ -497,14 +595,20 @@ export default function ChatPanel({ selectedDate }: ChatPanelProps) {
             sx={{
               flex: 1,
               overflowY: 'auto',
+              overflowX: 'hidden',
               p: 2,
               mb: 2,
-              bgcolor: 'grey.50',
+              background: 'linear-gradient(180deg, #fafafa 0%, #f5f5f5 100%)',
+              border: '1px solid',
+              borderColor: 'divider',
+              width: '100%',
+              maxWidth: '100%',
             }}
           >
             {!conversationStarted ? (
               <Box sx={{ textAlign: 'center', py: 8 }}>
-                <Typography variant="body2" color="text.secondary">
+                <ChatIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2, opacity: 0.5 }} />
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9375rem' }}>
                   予定を選択して会話を開始してください
                 </Typography>
               </Box>
@@ -523,16 +627,28 @@ export default function ChatPanel({ selectedDate }: ChatPanelProps) {
                     }}
                   >
                     <Paper
-                      elevation={1}
+                      elevation={msg.role === 'user' ? 3 : 2}
                       sx={{
-                        p: 1.5,
+                        p: 1.75,
                         maxWidth: '80%',
-                        bgcolor: msg.role === 'user' ? 'primary.main' : 'background.paper',
-                        color: msg.role === 'user' ? 'primary.contrastText' : 'text.primary',
-                        borderRadius: 2,
+                        bgcolor: msg.role === 'user'
+                          ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                          : 'background.paper',
+                        color: msg.role === 'user' ? 'white' : 'text.primary',
+                        borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                        boxShadow: msg.role === 'user'
+                          ? '0px 4px 12px rgba(102, 126, 234, 0.25)'
+                          : '0px 2px 8px rgba(0, 0, 0, 0.08)',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          transform: 'translateY(-1px)',
+                          boxShadow: msg.role === 'user'
+                            ? '0px 6px 16px rgba(102, 126, 234, 0.3)'
+                            : '0px 4px 12px rgba(0, 0, 0, 0.12)',
+                        },
                       }}
                     >
-                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
                         {msg.content}
                       </Typography>
                     </Paper>
@@ -540,7 +656,16 @@ export default function ChatPanel({ selectedDate }: ChatPanelProps) {
                 ))}
                 {loading && (
                   <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
-                    <CircularProgress size={20} />
+                    <Paper
+                      elevation={2}
+                      sx={{
+                        p: 1.5,
+                        bgcolor: 'background.paper',
+                        borderRadius: '18px 18px 18px 4px',
+                      }}
+                    >
+                      <CircularProgress size={20} />
+                    </Paper>
                   </Box>
                 )}
                 {/* 自動スクロール用のダミー要素 */}

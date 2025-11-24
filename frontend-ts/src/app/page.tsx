@@ -238,7 +238,7 @@ export default function HomePage() {
 
                 {/* 下側: AudioDiary */}
                 <Panel defaultSize={25} minSize={25}>
-                  <Box sx={{ height: '100%', p: 1 }}>
+                  <Box sx={{ height: '100%', p: 1.5 }}>
                     <Paper
                       elevation={2}
                       sx={{

@@ -268,34 +268,78 @@ export default function AudioDiaryPanel({
 
         {/* AudioDiaryの予定がない場合 */}
         {getAudioDiaryEvents().length === 0 ? (
-          <Box sx={{ textAlign: 'center', py: 4 }}>
-            <Typography variant="body1" color="text.secondary">
+          <Box
+            sx={{
+              textAlign: 'center',
+              py: 8,
+              px: 2,
+              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.03) 0%, rgba(139, 92, 246, 0.03) 100%)',
+              borderRadius: 2,
+              border: '2px dashed',
+              borderColor: 'divider',
+            }}
+          >
+            <Typography variant="body1" color="text.secondary" sx={{ fontSize: '0.9375rem' }}>
               {selectedDiaryDate
                 ? `${dayjs(selectedDiaryDate).format('YYYY年M月D日')}のAudioDiaryはありません`
                 : 'AudioDiaryはありません'}
             </Typography>
           </Box>
         ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minHeight: 0, overflow: 'auto' }}>
             {getAudioDiaryEventsByDate().map(({ date, events: dateEvents }) => (
-              <Box key={date} sx={{ borderBottom: 1, borderColor: 'divider', pb: 2, '&:last-child': { borderBottom: 0 } }}>
+              <Box
+                key={date}
+                sx={{
+                  borderLeft: '4px solid',
+                  borderColor: 'secondary.main',
+                  pl: 2,
+                  pb: 2,
+                  '&:last-child': { borderBottom: 0 },
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: 'text.secondary',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    mb: 1.5,
+                    display: 'block',
+                  }}
+                >
+                  {dayjs(date).format('M月D日')}
+                </Typography>
                 {dateEvents.map((event) => (
                   <Box
                     key={event.id}
                     sx={{
-                      p: 1.5,
-                      mb: 1,
-                      bgcolor: 'grey.50',
-                      borderRadius: 1,
-                      border: 1,
+                      p: 2,
+                      mb: 1.5,
+                      background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%)',
+                      borderRadius: 2,
+                      border: '1px solid',
                       borderColor: 'divider',
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.04)',
                       '&:hover': {
-                        bgcolor: 'action.hover',
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0px 4px 12px rgba(99, 102, 241, 0.15)',
+                        borderColor: 'secondary.light',
                       },
                     }}
                   >
                     {event.description ? (
-                      <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          whiteSpace: 'pre-wrap',
+                          lineHeight: 1.8,
+                          color: 'text.primary',
+                          fontSize: '0.9375rem',
+                        }}
+                      >
                         {event.description}
                       </Typography>
                     ) : (

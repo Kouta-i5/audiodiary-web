@@ -1,10 +1,7 @@
 import axios from "axios";
 import {
-    ChatContext,
     ChatMessageRequest,
     ChatMessageResponse,
-    DiaryRequest,
-    DiaryResponse,
     Message,
     SummarizeRequest,
     SummarizeResponse,
@@ -63,35 +60,3 @@ export async function fetchMessage(
     }
 }
 
-export async function setChatContext(context: ChatContext) {
-    const res = await api.post('/api/v1/chat/context', context);
-    if (!res.data) throw new Error('コンテキストAPIの呼び出しに失敗しました');
-    return {
-        message: res.data.message,
-        initial_message: res.data.initial_message,
-        context: res.data.context,
-    };
-}
-
-export async function saveDiary(payload: DiaryRequest): Promise<DiaryResponse> {
-    const { data } = await api.post<DiaryResponse>('/api/v1/chat/save', payload);
-    return data;
-}
-
-export async function fetchDiaries(): Promise<DiaryResponse[]> {
-    try {
-        const { data } = await api.get<DiaryResponse[]>('/api/v1/diary/');
-        return data;
-    } catch (error) {
-        if (axios.isAxiosError(error)) {
-            console.error('日記一覧の取得に失敗しました:', {
-                status: error.response?.status,
-                statusText: error.response?.statusText,
-                data: error.response?.data,
-                message: error.message
-            });
-            throw new Error(`日記一覧の取得に失敗しました: ${error.message}`);
-        }
-        throw error;
-    }
-}

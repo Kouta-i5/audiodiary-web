@@ -79,7 +79,7 @@ export default function LoginPage() {
         {/* ロゴ */}
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Typography variant="h3" fontWeight={700} gutterBottom>
-            AI-Diary
+            AudioDiary
           </Typography>
           <Typography variant="body1" color="text.secondary">
             音声日記アプリケーション
