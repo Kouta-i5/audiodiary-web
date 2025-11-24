@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    container_name: audiodiary-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../backend-py:/workspace/backend-py
+      - backend-data:/workspace/backend-py/.venv
+    env_file:
+      - .devcontainer/.env
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    working_dir: /workspace/backend-py
+    command: uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - audiodiary-network
+
+volumes:
+  backend-data:
+
+networks:
+  audiodiary-network:
+    driver: bridge
+
