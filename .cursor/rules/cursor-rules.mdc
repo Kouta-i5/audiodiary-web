@@ -1,0 +1,115 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+## バックエンド
+- 言語：Python
+- フレームワーク：FastAPI
+- パッケージマネージャー：uv
+- Linter：Ruff
+- 型チェック：mypy
+- テスト：pytest
+
+## データベース
+- PostgreSQL
+
+## 開発環境・ツール
+- バージョン管理：Git
+- コンテナ：Docker
+- 環境変数管理：dotenv
+
+## API・通信
+- API形式：REST API（FastAPI）
+- （認証方式未定義）
+
+## デプロイ・インフラ
+- AWS
+
+# ディレクトリ構成変更
+- ソースコードのファイルを移動する場合は新規に作らずmvコマンドで実行する
+
+# 回答時のルール
+- 絵文字を使用しない
+- 日本語で回答する。ただし、アルファベットの方がわかりやすいものはそのまま
+# コーディングルール
+- 半角スペースを作らない
+- タブを作らない
+- 最終行は改行しない
+- 絵文字的な記号（❌💡🚀🤖✅📝🧪🔐など）を絶対に使用禁止
+
+## エラーハンドリング
+- エラーハンドリングのメソッドはtry-except文を使用する
+- if文による事前チェックではなく、try-except文で例外をキャッチする
+- エラー発生時は適切なログ出力を行い、例外を再発生させる
+
+## ドキュメンテーション
+- Python関数にはGoogle Style Docstringで解説を加える
+- autoDocstring拡張機能を使用してドキュメント生成を支援
+- 関数の目的、引数、戻り値、例外を明確に記述する
+- 日本語でドキュメントを記述する
+
+## unit test rules
+- 個々のクラスや関数の動作を検証する
+- 各テストメソッドは1つの検証項目のみをテストする（単一責任の原則）
+- AAA（Arrange-Act-Assert）パターンに従って記述する
+  - Arrange: テストの前提条件とテストデータを準備
+  - Act: テスト対象のメソッドを実行
+  - Assert: 期待される結果を検証
+- テストメソッド名は「test_対象メソッド名_条件_期待結果」の形式で英語で記述
+  例: test_calculate_tax_with_positive_amount_returns_correct_tax
+- docstringでテストの検証内容を日本語で簡潔に記載する
+- 外部依存はすべてモック化する（unittest.mockまたはpytestのfixture使用）
+- エラーケースも必ずテストする（正常系・異常系の両方をカバー）
+- テストデータはfixtureで管理し、テスト間で共有する
+
+## integration test rules
+- 複数のコンポーネント間の連携を検証する
+- BDD（挙動駆動開発）のGiven-When-Thenスタイルで記述する
+  - Given: 前提条件（システムの初期状態）
+  - When: 実行する操作
+  - Then: 期待される結果
+- テストメソッド名は「test_シナリオ名_期待される振る舞い」の形式で記述
+  例: test_ユーザー登録フロー_新規ユーザーが正常に登録される
+- docstringにGiven-When-Thenを明記する
+- 実際のデータベースや外部サービスとの連携を含む
+- エンドツーエンドのシナリオを検証する
+- テスト環境の初期化と後処理を適切に行う
+
+### integration test実行方法
+- ローカル環境での統合テスト実行
+  ```bash
+  # 全ての統合テストを実行（通常実行、エラー部分のログのみ表示）
+  uv run pytest tests/integration/ -v --run-integration
+
+  # 特定のテストファイルを実行
+  uv run pytest tests/integration/test_api_integration.py -v --run-integration
+
+  # 特定のテストクラス・メソッドを実行
+  uv run pytest tests/integration/test_api_integration.py::TestAPIIntegration::test_multi_page_pdf_api_integration_returns_paged_response -v --run-integration
+
+  # 詳細ログ付きで実行（デバッグ時のみ、全てのprint文とログを表示）
+  uv run pytest tests/integration/ -v -s --run-integration
+  ```
+
+- AWS環境での統合テスト実行（.env.awsファイルが必要）
+  ```bash
+  # AWS統合テストを実行
+  uv run pytest tests/integration/test_aws_integration.py -v --run-integration
+
+  # 特定のAWSテストを実行
+  uv run pytest tests/integration/test_aws_integration.py::TestAWSIntegration::test_complete_aws_workflow_with_presigned_url_upload -v --run-integration
+  ```
+
+- RLS（Row Level Security）テスト実行
+  ```bash
+  # RLS統合テストを実行
+  uv run pytest tests/integration/test_rls_integration.py -v --run-integration
+  ```
+
+- 注意事項
+  - 統合テストは実際のデータベース・AWS環境を使用するため、適切な環境設定が必要
+  - --run-integrationフラグは必須（このフラグがないと統合テストはスキップされる）
+  - AWS統合テストには.env.awsファイルでの環境変数設定が必要
+  - テスト実行前にデータベースの初期化・マイグレーション実行を確認
+  - 通常は-sオプションなしで実行してエラー部分のログのみ取得、詳細に見るときだけ-sを使用
