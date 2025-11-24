@@ -30,3 +30,12 @@ a {
 ::selection {
   background-color: rgba(16, 185, 129, 0.18);
 }
+
+/* Resizable Panel Handle */
+.resize-handle:hover {
+  background-color: rgba(25, 118, 210, 0.2) !important;
+}
+
+.resize-handle[data-panel-resize-handle-state="dragging"] {
+  background-color: rgba(25, 118, 210, 0.3) !important;
+}

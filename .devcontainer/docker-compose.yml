@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build:
@@ -7,12 +5,12 @@ services:
       dockerfile: .devcontainer/Dockerfile
     container_name: audiodiary-backend
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       - ../backend-py:/workspace/backend-py
       - backend-data:/workspace/backend-py/.venv
     env_file:
-      - .devcontainer/.env
+      - .env
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
     working_dir: /workspace/backend-py

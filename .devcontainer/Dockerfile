@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip install uv
 
-COPY backend-py/pyproject.toml backend-py/uv.lock /workspace/backend-py/
+COPY backend-py/pyproject.toml backend-py/uv.lock backend-py/README.md /workspace/backend-py/
 
 WORKDIR /workspace/backend-py
 

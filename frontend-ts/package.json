@@ -1,5 +1,5 @@
 {
-  "name": "audiodiary-web",
+  "name": "audiodiary",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -20,15 +20,16 @@
     "next": "15.2.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-icons": "^5.5.0"
+    "react-icons": "^5.5.0",
+    "react-resizable-panels": "^3.0.6"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@types/node": "^20",
-    "@types/react": "^19",
+    "@types/node": "20.19.25",
+    "@types/react": "19.2.6",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.2.5",
-    "typescript": "^5"
+    "typescript": "5.9.3"
   }
 }

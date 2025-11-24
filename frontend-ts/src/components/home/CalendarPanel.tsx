@@ -31,7 +31,7 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/ja';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -48,9 +48,10 @@ interface CalendarEvent {
 
 interface CalendarPanelProps {
   onDateSelect?: (date: string | null) => void;
+  onMonthChange?: (month: dayjs.Dayjs) => void;
 }
 
-export default function CalendarPanel({ onDateSelect }: CalendarPanelProps) {
+export default function CalendarPanel({ onDateSelect, onMonthChange }: CalendarPanelProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
@@ -73,7 +74,8 @@ export default function CalendarPanel({ onDateSelect }: CalendarPanelProps) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [selectedDayEvents, setSelectedDayEvents] = useState<CalendarEvent[]>([]);
-  const [selectedDiaryDate, setSelectedDiaryDate] = useState<string | null>(null);
+  const [maxEventsPerDay, setMaxEventsPerDay] = useState(3);
+  const calendarGridRef = useRef<HTMLDivElement>(null);
 
   // URLパラメータからトークンを取得
   useEffect(() => {
@@ -352,115 +354,55 @@ export default function CalendarPanel({ onDateSelect }: CalendarPanelProps) {
     });
   };
 
-  // すべてのAudioDiary予定を取得（フィルタリングなし）
-  const getAllAudioDiaryEvents = () => {
-    return events.filter((event) => {
-      // 予定名が「AudioDiary」を含むものを抽出
-      if (!event.summary || !event.summary.includes('AudioDiary')) {
-        return false;
-      }
-      return true;
-    });
-  };
-
-  // AudioDiaryの予定を取得（選択された日付または現在の月に基づく）
-  const getAudioDiaryEvents = () => {
-    const allAudioDiaryEvents = getAllAudioDiaryEvents();
-    
-    // 特定の日付が選択されている場合は、その日の予定のみを返す
-    if (selectedDiaryDate) {
-      const targetDate = dayjs(selectedDiaryDate);
-      return allAudioDiaryEvents.filter((event) => {
-        if (event.start.date) {
-          // 終日の予定
-          const startDate = dayjs(event.start.date);
-          const endDate = event.end.date ? dayjs(event.end.date) : startDate;
-          return targetDate.isSameOrAfter(startDate, 'day') && targetDate.isBefore(endDate, 'day');
-        } else if (event.start.dateTime) {
-          // 通常の予定
-          const eventDate = dayjs(event.start.dateTime);
-          return eventDate.isSame(targetDate, 'day');
-        }
-        return false;
-      });
-    }
-
-    // 選択されていない場合は、現在の月の範囲内かチェック
-    const startOfMonth = currentMonth.startOf('month');
-    const endOfMonth = currentMonth.endOf('month');
-
-    return allAudioDiaryEvents.filter((event) => {
-      if (event.start.date) {
-        // 終日の予定
-        const startDate = dayjs(event.start.date);
-        const endDate = event.end.date ? dayjs(event.end.date) : startDate;
-        return (
-          (startDate.isSameOrAfter(startOfMonth, 'day') && startDate.isSameOrBefore(endOfMonth, 'day')) ||
-          (endDate.isSameOrAfter(startOfMonth, 'day') && endDate.isSameOrBefore(endOfMonth, 'day')) ||
-          (startDate.isBefore(startOfMonth, 'day') && endDate.isAfter(endOfMonth, 'day'))
-        );
-      } else if (event.start.dateTime) {
-        // 通常の予定
-        const eventDate = dayjs(event.start.dateTime);
-        return eventDate.isSameOrAfter(startOfMonth, 'day') && eventDate.isSameOrBefore(endOfMonth, 'day');
-      }
-      return false;
-    });
-  };
-
-  // AudioDiaryの予定を日付ごとにグループ化
-  const getAudioDiaryEventsByDate = () => {
-    const audioDiaryEvents = getAudioDiaryEvents();
-    const grouped: { [key: string]: CalendarEvent[] } = {};
-
-    audioDiaryEvents.forEach((event) => {
-      let dateKey: string;
-      if (event.start.date) {
-        // 終日の予定
-        dateKey = event.start.date;
-      } else if (event.start.dateTime) {
-        // 通常の予定
-        dateKey = dayjs(event.start.dateTime).format('YYYY-MM-DD');
-      } else {
-        return;
-      }
-
-      if (!grouped[dateKey]) {
-        grouped[dateKey] = [];
-      }
-      grouped[dateKey].push(event);
-    });
-
-    // 日付順にソート
-    return Object.keys(grouped)
-      .sort()
-      .map((dateKey) => ({
-        date: dateKey,
-        events: grouped[dateKey],
-      }));
-  };
-
-  // 初期状態で最初のAudioDiary予定の日付を設定
+  // カレンダーグリッドの高さに応じて予定の表示数を調整
   useEffect(() => {
-    if (!selectedDiaryDate && events.length > 0) {
-      const allAudioDiaryEvents = events.filter((event) => {
-        return event.summary && event.summary.includes('AudioDiary');
-      });
-      if (allAudioDiaryEvents.length > 0) {
-        // 最初の予定の日付を取得
-        const firstEvent = allAudioDiaryEvents[0];
-        let firstDate: string;
-        if (firstEvent.start.date) {
-          firstDate = firstEvent.start.date;
-        } else if (firstEvent.start.dateTime) {
-          firstDate = dayjs(firstEvent.start.dateTime).format('YYYY-MM-DD');
-        } else {
-          return;
-        }
-        setSelectedDiaryDate(firstDate);
+    const updateMaxEvents = () => {
+      if (!calendarGridRef.current) return;
+      
+      // getCalendarDaysを関数内で直接計算（currentMonthに依存）
+      const startOfMonth = currentMonth.startOf('month');
+      const endOfMonth = currentMonth.endOf('month');
+      const startOfCalendar = startOfMonth.startOf('week');
+      const endOfCalendar = endOfMonth.endOf('week');
+      
+      const days: dayjs.Dayjs[] = [];
+      let day = startOfCalendar;
+      
+      while (day.isBefore(endOfCalendar) || day.isSame(endOfCalendar, 'day')) {
+        days.push(day);
+        day = day.add(1, 'day');
       }
+      
+      const gridHeight = calendarGridRef.current.clientHeight;
+      const weekCount = Math.ceil(days.length / 7);
+      const availableHeightPerWeek = gridHeight / weekCount;
+      const headerHeight = 48; // 曜日ヘッダーの高さ（概算）
+      const padding = 8; // パディング
+      const dateHeight = 20; // 日付表示の高さ
+      
+      const availableHeightForEvents = availableHeightPerWeek - headerHeight - padding - dateHeight;
+      
+      // 予定1件あたりの高さ（フォントサイズ + パディング + gap）
+      const eventHeight = 24; // 0.75rem (12px) + py: 0.25 (2px*2) + gap: 0.25
+      
+      // 表示可能な予定数を計算
+      const calculatedMaxEvents = Math.max(1, Math.floor(availableHeightForEvents / eventHeight));
+      setMaxEventsPerDay(Math.min(calculatedMaxEvents, 5)); // 最大5件まで
+    };
+
+    // 初期実行
+    const timer = setTimeout(updateMaxEvents, 0);
+    
+    const resizeObserver = new ResizeObserver(updateMaxEvents);
+    if (calendarGridRef.current) {
+      resizeObserver.observe(calendarGridRef.current);
     }
-  }, [events, selectedDiaryDate]);
+
+    return () => {
+      clearTimeout(timer);
+      resizeObserver.disconnect();
+    };
+  }, [currentMonth, events]);
 
   // 日をクリック
   const handleDayClick = (date: dayjs.Dayjs, event: React.MouseEvent<HTMLElement>) => {
@@ -484,17 +426,29 @@ export default function CalendarPanel({ onDateSelect }: CalendarPanelProps) {
 
   // 前の月
   const handlePrevMonth = () => {
-    setCurrentMonth(currentMonth.subtract(1, 'month'));
+    const newMonth = currentMonth.subtract(1, 'month');
+    setCurrentMonth(newMonth);
+    if (onMonthChange) {
+      onMonthChange(newMonth);
+    }
   };
 
   // 次の月
   const handleNextMonth = () => {
-    setCurrentMonth(currentMonth.add(1, 'month'));
+    const newMonth = currentMonth.add(1, 'month');
+    setCurrentMonth(newMonth);
+    if (onMonthChange) {
+      onMonthChange(newMonth);
+    }
   };
 
   // 今日に戻る
   const handleToday = () => {
-    setCurrentMonth(dayjs());
+    const today = dayjs();
+    setCurrentMonth(today);
+    if (onMonthChange) {
+      onMonthChange(today);
+    }
   };
 
   // 日付をクリックして予定を作成
@@ -515,8 +469,8 @@ export default function CalendarPanel({ onDateSelect }: CalendarPanelProps) {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 3, overflow: 'hidden' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3, flexShrink: 0 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <CalendarIcon color="primary" sx={{ fontSize: 32 }} />
           <Typography variant="h4" fontWeight={700}>
@@ -589,7 +543,19 @@ export default function CalendarPanel({ onDateSelect }: CalendarPanelProps) {
           </Box>
 
           {/* カレンダーグリッド */}
-          <Paper elevation={2} sx={{ overflow: 'hidden', width: '100%' }}>
+          <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
+            <Paper
+              elevation={2}
+              sx={{
+                overflow: 'auto',
+                width: '100%',
+                maxWidth: '1400px',
+                height: '100%',
+                mx: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
             {/* 曜日ヘッダー */}
             <Box
               sx={{
@@ -620,17 +586,21 @@ export default function CalendarPanel({ onDateSelect }: CalendarPanelProps) {
 
             {/* カレンダー日付グリッド */}
             {loading && events.length === 0 ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 4, flex: 1 }}>
                 <CircularProgress />
               </Box>
             ) : (
               <Box
+                ref={calendarGridRef}
                 sx={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+                  gridAutoRows: '1fr',
                   gap: 0.5,
                   p: 0.5,
                   width: '100%',
+                  flex: 1,
+                  minHeight: 0,
                 }}
               >
                 {getCalendarDays().map((date, index) => {
@@ -645,9 +615,10 @@ export default function CalendarPanel({ onDateSelect }: CalendarPanelProps) {
                       key={index}
                       onClick={(e) => handleDayClick(date, e)}
                       sx={{
-                        minHeight: 120,
+                        minHeight: 0,
                         minWidth: 0,
                         width: '100%',
+                        height: '100%',
                         border: 1,
                         borderColor: 'divider',
                         bgcolor: isCurrentMonth ? 'background.paper' : 'grey.50',
@@ -655,6 +626,8 @@ export default function CalendarPanel({ onDateSelect }: CalendarPanelProps) {
                         cursor: 'pointer',
                         position: 'relative',
                         overflow: 'hidden',
+                        display: 'flex',
+                        flexDirection: 'column',
                         '&:hover': {
                           bgcolor: 'action.hover',
                         },
@@ -681,8 +654,8 @@ export default function CalendarPanel({ onDateSelect }: CalendarPanelProps) {
                       </Typography>
 
                       {/* 予定リスト */}
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25, width: '100%', minWidth: 0 }}>
-                        {dayEvents.slice(0, 3).map((event) => {
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25, width: '100%', minWidth: 0, flex: 1, overflow: 'hidden' }}>
+                        {dayEvents.slice(0, maxEventsPerDay).map((event) => {
                           const isAllDay = !event.start.dateTime && !!event.start.date;
                           const timeText = isAllDay ? '終日' : dayjs(event.start.dateTime).format('HH:mm');
                           return (
@@ -713,16 +686,17 @@ export default function CalendarPanel({ onDateSelect }: CalendarPanelProps) {
                             </Box>
                           );
                         })}
-                        {dayEvents.length > 3 && (
+                        {dayEvents.length > maxEventsPerDay && (
                           <Typography
                             variant="caption"
                             sx={{
                               color: 'text.secondary',
                               px: 0.5,
                               fontSize: '0.7rem',
+                              mt: 'auto',
                             }}
                           >
-                            他{dayEvents.length - 3}件
+                            他{dayEvents.length - maxEventsPerDay}件
                           </Typography>
                         )}
                       </Box>
@@ -822,115 +796,11 @@ export default function CalendarPanel({ onDateSelect }: CalendarPanelProps) {
               )}
             </Box>
           </Popover>
-
-          {/* AudioDiaryの予定表示セクション */}
-          {isAuthenticated && (
-            <Box sx={{ mt: 4 }}>
-              <Paper elevation={2} sx={{ p: 2 }}>
-                {/* 日付ナビゲーション */}
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <IconButton
-                      size="small"
-                      onClick={() => {
-                        if (!selectedDiaryDate) return;
-                        const current = dayjs(selectedDiaryDate);
-                        const prevDate = current.subtract(1, 'day');
-                        setSelectedDiaryDate(prevDate.format('YYYY-MM-DD'));
-                        // 月が変わった場合はカレンダーも更新
-                        if (prevDate.month() !== currentMonth.month()) {
-                          setCurrentMonth(prevDate);
-                        }
-                      }}
-                      disabled={!selectedDiaryDate}
-                    >
-                      <ChevronLeftIcon />
-                    </IconButton>
-                    <Typography variant="h6" fontWeight={600} sx={{ minWidth: 150, textAlign: 'center' }}>
-                      {selectedDiaryDate
-                        ? dayjs(selectedDiaryDate).format('YYYY年M月D日')
-                        : getAudioDiaryEventsByDate()[0]?.date
-                        ? dayjs(getAudioDiaryEventsByDate()[0].date).format('YYYY年M月D日')
-                        : '日記を選択'}
-                    </Typography>
-                    <IconButton
-                      size="small"
-                      onClick={() => {
-                        if (!selectedDiaryDate) return;
-                        const current = dayjs(selectedDiaryDate);
-                        const nextDate = current.add(1, 'day');
-                        setSelectedDiaryDate(nextDate.format('YYYY-MM-DD'));
-                        // 月が変わった場合はカレンダーも更新
-                        if (nextDate.month() !== currentMonth.month()) {
-                          setCurrentMonth(nextDate);
-                        }
-                      }}
-                      disabled={!selectedDiaryDate}
-                    >
-                      <ChevronRightIcon />
-                    </IconButton>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      startIcon={<TodayIcon />}
-                      onClick={() => {
-                        setSelectedDiaryDate(dayjs().format('YYYY-MM-DD'));
-                        setCurrentMonth(dayjs());
-                      }}
-                    >
-                      今日
-                    </Button>
-                  </Box>
-                </Box>
-
-                {/* AudioDiaryの予定がない場合 */}
-                {getAudioDiaryEvents().length === 0 ? (
-                  <Box sx={{ textAlign: 'center', py: 4 }}>
-                    <Typography variant="body1" color="text.secondary">
-                      {selectedDiaryDate
-                        ? `${dayjs(selectedDiaryDate).format('YYYY年M月D日')}のAudioDiaryはありません`
-                        : 'AudioDiaryはありません'}
-                    </Typography>
-                  </Box>
-                ) : (
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {getAudioDiaryEventsByDate().map(({ date, events: dateEvents }) => (
-                      <Box key={date} sx={{ borderBottom: 1, borderColor: 'divider', pb: 2, '&:last-child': { borderBottom: 0 } }}>
-                        {dateEvents.map((event) => (
-                          <Box
-                            key={event.id}
-                            sx={{
-                              p: 1.5,
-                              mb: 1,
-                              bgcolor: 'grey.50',
-                              borderRadius: 1,
-                              border: 1,
-                              borderColor: 'divider',
-                              '&:hover': {
-                                bgcolor: 'action.hover',
-                              },
-                            }}
-                          >
-                            {event.description ? (
-                              <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>
-                                {event.description}
-                              </Typography>
-                            ) : (
-                              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                                内容がありません
-                              </Typography>
-                            )}
-                          </Box>
-                        ))}
-                      </Box>
-                    ))}
-                  </Box>
-                )}
-              </Paper>
-            </Box>
-          )}
+          </Box>
         </>
       )}
+
+      {/* 予定作成・編集ダイアログ */}
 
       {/* 予定作成・編集ダイアログ */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
