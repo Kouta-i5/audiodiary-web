@@ -34,6 +34,38 @@ docker-compose build
 docker-compose up
 ```
 
+### 5. 環境の停止
+
+#### Docker Composeで起動した場合
+
+```bash
+# .devcontainerディレクトリで実行
+cd .devcontainer
+docker-compose down
+```
+
+または、プロジェクトルートから：
+
+```bash
+docker-compose -f .devcontainer/docker-compose.yml down
+```
+
+#### 個別のコンテナを停止する場合
+
+```bash
+# コンテナ名で停止
+docker stop audiodiary-backend
+
+# 停止して削除する場合
+docker rm -f audiodiary-backend
+```
+
+#### すべての実行中コンテナを停止する場合
+
+```bash
+docker stop $(docker ps -q)
+```
+
 ## 構成
 
 - **Dockerfile**: Python 3.11 + uv を使用したバックエンド環境
@@ -43,4 +75,3 @@ docker-compose up
 ## ポート
 
 - `8000`: FastAPIバックエンドAPI
-
