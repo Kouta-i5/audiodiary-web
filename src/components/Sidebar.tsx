@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  CalendarToday as CalendarIcon,
   Edit as EditIcon,
   Home as HomeIcon,
   Person as PersonIcon,
@@ -22,13 +21,11 @@ import { usePathname } from 'next/navigation';
 const linkNames: { [key: string]: string } = {
   Profile: 'プロフィール',
   Home: 'ホーム',
-  Calendar: 'カレンダー',
 };
 
 const navItems = [
   { href: '/profile', icon: <PersonIcon />, label: linkNames.Profile },
   { href: '/', icon: <HomeIcon />, label: linkNames.Home },
-  { href: '/calendar', icon: <CalendarIcon />, label: linkNames.Calendar },
 ];
 
 export default function Sidebar() {
@@ -95,7 +92,7 @@ export default function Sidebar() {
         </Typography>
         <List sx={{ px: 1 }}>
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || (item.href === '/dashboard' && pathname?.startsWith('/dashboard'));
             return (
               <ListItem key={item.href} disablePadding>
                 <ListItemButton

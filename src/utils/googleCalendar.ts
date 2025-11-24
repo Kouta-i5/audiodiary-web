@@ -2,17 +2,16 @@ import { google } from 'googleapis';
 
 // Google OAuth 2.0設定
 const oauth2Client = new google.auth.OAuth2(
-  process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
-  process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/auth/google/callback'
+  process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/auth/google/callback'
 );
 
 // 認証URLを生成
 export function getAuthUrl(): string {
-  const scopes = [
-    'https://www.googleapis.com/auth/calendar',
-    'https://www.googleapis.com/auth/calendar.events',
-  ];
+  const scopes = process.env.GOOGLE_SCOPES
+    ? process.env.GOOGLE_SCOPES.split(',')
+    : ['https://www.googleapis.com/auth/calendar'];
 
   return oauth2Client.generateAuthUrl({
     access_type: 'offline',

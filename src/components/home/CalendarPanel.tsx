@@ -1,268 +1,993 @@
 'use client';
 
 import {
-  Book as BookIcon,
-  ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon,
+    Add as AddIcon,
+    CalendarToday as CalendarIcon,
+    CheckCircle as CheckCircleIcon,
+    ChevronLeft as ChevronLeftIcon,
+    ChevronRight as ChevronRightIcon,
+    Delete as DeleteIcon,
+    Edit as EditIcon,
+    Today as TodayIcon,
 } from '@mui/icons-material';
 import {
-  Alert,
-  Box,
-  Chip,
-  CircularProgress,
-  IconButton,
-  Paper,
-  Stack,
-  Typography,
+    Alert,
+    Box,
+    Button,
+    Checkbox,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    FormControlLabel,
+    IconButton,
+    Paper,
+    Popover,
+    TextField,
+    Typography
 } from '@mui/material';
-import dayjs, { Dayjs } from 'dayjs';
-import { useEffect, useState } from 'react';
-import { fetchDiaries } from '../../utils/api';
-import { DiaryResponse } from '../../utils/schemas';
+import dayjs from 'dayjs';
+import 'dayjs/locale/ja';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import { useCallback, useEffect, useState } from 'react';
+
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
+dayjs.locale('ja');
+
+interface CalendarEvent {
+  id: string;
+  summary: string;
+  description?: string;
+  start: { dateTime?: string; date?: string; timeZone?: string };
+  end: { dateTime?: string; date?: string; timeZone?: string };
+  location?: string;
+}
 
 export default function CalendarPanel() {
-  const [selectedDate, setSelectedDate] = useState<Dayjs>(dayjs());
-  const [currentMonth, setCurrentMonth] = useState<Dayjs>(dayjs());
-  const [diaries, setDiaries] = useState<DiaryResponse[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState<string | null>(null);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  const [formData, setFormData] = useState({
+    summary: '',
+    description: '',
+    startDateTime: '',
+    endDateTime: '',
+    startDate: '',
+    endDate: '',
+    location: '',
+    isAllDay: false,
+  });
+  const [currentMonth, setCurrentMonth] = useState(dayjs());
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const [selectedDayEvents, setSelectedDayEvents] = useState<CalendarEvent[]>([]);
+  const [selectedDiaryDate, setSelectedDiaryDate] = useState<string | null>(null);
 
-  // 日記データを読み込む
-  const loadDiaries = async () => {
+  // URLパラメータからトークンを取得
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const accessTokenParam = params.get('access_token');
+      const refreshTokenParam = params.get('refresh_token');
+      const errorParam = params.get('error');
+
+      if (errorParam) {
+        setError(errorParam);
+      }
+
+      if (accessTokenParam && refreshTokenParam) {
+        setAccessToken(accessTokenParam);
+        setRefreshToken(refreshTokenParam);
+        setIsAuthenticated(true);
+        // URLからパラメータを削除
+        window.history.replaceState({}, '', '/dashboard');
+      } else {
+        // ローカルストレージからトークンを取得
+        const storedAccessToken = localStorage.getItem('google_access_token');
+        const storedRefreshToken = localStorage.getItem('google_refresh_token');
+        if (storedAccessToken && storedRefreshToken) {
+          setAccessToken(storedAccessToken);
+          setRefreshToken(storedRefreshToken);
+          setIsAuthenticated(true);
+        }
+      }
+    }
+  }, []);
+
+  // トークンを保存
+  useEffect(() => {
+    if (accessToken && refreshToken) {
+      localStorage.setItem('google_access_token', accessToken);
+      localStorage.setItem('google_refresh_token', refreshToken);
+    }
+  }, [accessToken, refreshToken]);
+
+  // Google認証を開始
+  const handleGoogleAuth = async () => {
+    try {
+      window.location.href = '/api/auth/google/login';
+    } catch {
+      setError('認証の開始に失敗しました');
+    }
+  };
+
+  // 予定を読み込む
+  const loadEvents = useCallback(async (token: string, refresh: string, month?: dayjs.Dayjs) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchDiaries();
-      setDiaries(data);
-    } catch (err) {
-      console.error('日記データの読み込みエラー:', err);
-      setError('日記データの読み込みに失敗しました');
+      const targetMonth = month || currentMonth;
+      const timeMin = targetMonth.startOf('month').toISOString();
+      const timeMax = targetMonth.endOf('month').toISOString();
+      const response = await fetch(
+        `/api/calendar/events?accessToken=${encodeURIComponent(token)}&refreshToken=${encodeURIComponent(refresh)}&timeMin=${timeMin}&timeMax=${timeMax}`
+      );
+      const data = await response.json();
+      if (response.ok) {
+        setEvents(data);
+      } else {
+        setError(data.error || '予定の取得に失敗しました');
+      }
+    } catch {
+      setError('予定の取得に失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  }, [currentMonth]);
+
+  // 月が変更されたときに予定を再読み込み
+  useEffect(() => {
+    if (isAuthenticated && accessToken && refreshToken) {
+      loadEvents(accessToken, refreshToken, currentMonth);
+    }
+  }, [currentMonth, isAuthenticated, accessToken, refreshToken, loadEvents]);
+
+  // 予定作成ダイアログを開く
+  const handleOpenDialog = (event?: CalendarEvent) => {
+    if (event) {
+      const isAllDay = !event.start.dateTime && !!event.start.date;
+      setEditingEvent(event);
+      setFormData({
+        summary: event.summary,
+        description: event.description || '',
+        startDateTime: event.start.dateTime ? dayjs(event.start.dateTime).format('YYYY-MM-DDTHH:mm') : '',
+        endDateTime: event.end.dateTime ? dayjs(event.end.dateTime).format('YYYY-MM-DDTHH:mm') : '',
+        startDate: event.start.date || (event.start.dateTime ? dayjs(event.start.dateTime).format('YYYY-MM-DD') : ''),
+        endDate: event.end.date ? dayjs(event.end.date).subtract(1, 'day').format('YYYY-MM-DD') : (event.end.dateTime ? dayjs(event.end.dateTime).format('YYYY-MM-DD') : ''),
+        location: event.location || '',
+        isAllDay,
+      });
+    } else {
+      setEditingEvent(null);
+      const today = dayjs();
+      setFormData({
+        summary: '',
+        description: '',
+        startDateTime: today.format('YYYY-MM-DDTHH:mm'),
+        endDateTime: today.add(1, 'hour').format('YYYY-MM-DDTHH:mm'),
+        startDate: today.format('YYYY-MM-DD'),
+        endDate: today.format('YYYY-MM-DD'),
+        location: '',
+        isAllDay: false,
+      });
+    }
+    setOpenDialog(true);
+  };
+
+  // 予定を保存
+  const handleSaveEvent = async () => {
+    if (!accessToken || !refreshToken) {
+      setError('認証が必要です');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      let eventData: {
+        summary: string;
+        description?: string;
+        location?: string;
+        start: { dateTime?: string; date?: string; timeZone?: string };
+        end: { dateTime?: string; date?: string; timeZone?: string };
+      };
+
+      if (formData.isAllDay) {
+        // 終日の場合は date フィールドを使用
+        eventData = {
+          summary: formData.summary,
+          description: formData.description || undefined,
+          location: formData.location || undefined,
+          start: {
+            date: formData.startDate,
+          },
+          // 終日の場合は終了日は開始日の翌日（Google Calendarの仕様）
+          end: {
+            date: dayjs(formData.endDate).add(1, 'day').format('YYYY-MM-DD'),
+          },
+        };
+      } else {
+        // 通常の予定は dateTime フィールドを使用
+        eventData = {
+          summary: formData.summary,
+          description: formData.description || undefined,
+          location: formData.location || undefined,
+          start: {
+            dateTime: new Date(formData.startDateTime).toISOString(),
+            timeZone: 'Asia/Tokyo',
+          },
+          end: {
+            dateTime: new Date(formData.endDateTime).toISOString(),
+            timeZone: 'Asia/Tokyo',
+          },
+        };
+      }
+
+      let response;
+      if (editingEvent) {
+        // 更新
+        response = await fetch('/api/calendar/events', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            accessToken,
+            refreshToken,
+            eventId: editingEvent.id,
+            eventData,
+          }),
+        });
+      } else {
+        // 作成
+        response = await fetch('/api/calendar/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            accessToken,
+            refreshToken,
+            eventData,
+          }),
+        });
+      }
+
+      const data = await response.json();
+      if (response.ok) {
+        setOpenDialog(false);
+        loadEvents(accessToken, refreshToken);
+      } else {
+        setError(data.error || '予定の保存に失敗しました');
+      }
+    } catch {
+      setError('予定の保存に失敗しました');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadDiaries();
-  }, []);
+  // 予定を削除
+  const handleDeleteEvent = async (eventId: string) => {
+    if (!accessToken || !refreshToken) {
+      setError('認証が必要です');
+      return;
+    }
 
-  // 指定された日付の日記を取得
-  const getDiaryForDate = (date: Dayjs): DiaryResponse | undefined => {
-    return diaries.find(diary => dayjs(diary.date).isSame(date, 'day'));
+    if (!confirm('この予定を削除しますか？')) {
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `/api/calendar/events?accessToken=${encodeURIComponent(accessToken)}&refreshToken=${encodeURIComponent(refreshToken)}&eventId=${eventId}`,
+        { method: 'DELETE' }
+      );
+      const data = await response.json();
+      if (response.ok) {
+        loadEvents(accessToken, refreshToken);
+      } else {
+        setError(data.error || '予定の削除に失敗しました');
+      }
+    } catch {
+      setError('予定の削除に失敗しました');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // カレンダーの日付を生成
-  const generateCalendarDays = () => {
+  // ログアウト
+  const handleLogout = () => {
+    localStorage.removeItem('google_access_token');
+    localStorage.removeItem('google_refresh_token');
+    setAccessToken(null);
+    setRefreshToken(null);
+    setIsAuthenticated(false);
+    setEvents([]);
+  };
+
+  // カレンダーグリッドを生成
+  const getCalendarDays = () => {
     const startOfMonth = currentMonth.startOf('month');
     const endOfMonth = currentMonth.endOf('month');
     const startOfCalendar = startOfMonth.startOf('week');
     const endOfCalendar = endOfMonth.endOf('week');
-
-    const days: Dayjs[] = [];
+    
+    const days = [];
     let day = startOfCalendar;
-
+    
     while (day.isBefore(endOfCalendar) || day.isSame(endOfCalendar, 'day')) {
       days.push(day);
       day = day.add(1, 'day');
     }
-
+    
     return days;
   };
 
+  // 特定の日の予定を取得
+  const getEventsForDay = (date: dayjs.Dayjs) => {
+    return events.filter((event) => {
+      // 終日の予定か通常の予定かを判定
+      if (event.start.date) {
+        // 終日の予定
+        const startDate = dayjs(event.start.date);
+        const endDate = event.end.date ? dayjs(event.end.date) : startDate;
+        return date.isSameOrAfter(startDate, 'day') && date.isBefore(endDate, 'day');
+      } else if (event.start.dateTime) {
+        // 通常の予定
+        const eventDate = dayjs(event.start.dateTime);
+        return eventDate.isSame(date, 'day');
+      }
+      return false;
+    });
+  };
+
+  // AudioDiaryの予定を取得
+  const getAudioDiaryEvents = () => {
+    return events.filter((event) => {
+      // 予定名が「AudioDiary」を含むものを抽出
+      if (!event.summary || !event.summary.includes('AudioDiary')) {
+        return false;
+      }
+
+      // 特定の日付が選択されている場合は、その日の予定のみを返す
+      if (selectedDiaryDate) {
+        const targetDate = dayjs(selectedDiaryDate);
+        if (event.start.date) {
+          // 終日の予定
+          const startDate = dayjs(event.start.date);
+          const endDate = event.end.date ? dayjs(event.end.date) : startDate;
+          return targetDate.isSameOrAfter(startDate, 'day') && targetDate.isBefore(endDate, 'day');
+        } else if (event.start.dateTime) {
+          // 通常の予定
+          const eventDate = dayjs(event.start.dateTime);
+          return eventDate.isSame(targetDate, 'day');
+        }
+        return false;
+      }
+
+      // 選択されていない場合は、現在の月の範囲内かチェック
+      const startOfMonth = currentMonth.startOf('month');
+      const endOfMonth = currentMonth.endOf('month');
+
+      if (event.start.date) {
+        // 終日の予定
+        const startDate = dayjs(event.start.date);
+        const endDate = event.end.date ? dayjs(event.end.date) : startDate;
+        return (
+          (startDate.isSameOrAfter(startOfMonth, 'day') && startDate.isSameOrBefore(endOfMonth, 'day')) ||
+          (endDate.isSameOrAfter(startOfMonth, 'day') && endDate.isSameOrBefore(endOfMonth, 'day')) ||
+          (startDate.isBefore(startOfMonth, 'day') && endDate.isAfter(endOfMonth, 'day'))
+        );
+      } else if (event.start.dateTime) {
+        // 通常の予定
+        const eventDate = dayjs(event.start.dateTime);
+        return eventDate.isSameOrAfter(startOfMonth, 'day') && eventDate.isSameOrBefore(endOfMonth, 'day');
+      }
+      return false;
+    });
+  };
+
+  // AudioDiaryの予定を日付ごとにグループ化
+  const getAudioDiaryEventsByDate = () => {
+    const audioDiaryEvents = getAudioDiaryEvents();
+    const grouped: { [key: string]: CalendarEvent[] } = {};
+
+    audioDiaryEvents.forEach((event) => {
+      let dateKey: string;
+      if (event.start.date) {
+        // 終日の予定
+        dateKey = event.start.date;
+      } else if (event.start.dateTime) {
+        // 通常の予定
+        dateKey = dayjs(event.start.dateTime).format('YYYY-MM-DD');
+      } else {
+        return;
+      }
+
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = [];
+      }
+      grouped[dateKey].push(event);
+    });
+
+    // 日付順にソート
+    return Object.keys(grouped)
+      .sort()
+      .map((dateKey) => ({
+        date: dateKey,
+        events: grouped[dateKey],
+      }));
+  };
+
+  // 日をクリック
+  const handleDayClick = (date: dayjs.Dayjs, event: React.MouseEvent<HTMLElement>) => {
+    const dayEvents = getEventsForDay(date);
+    setSelectedDate(date.format('YYYY-MM-DD'));
+    setSelectedDayEvents(dayEvents);
+    setAnchorEl(event.currentTarget);
+  };
+
+  // 予定をクリック
+  const handleEventClick = (event: CalendarEvent, e: React.MouseEvent) => {
+    e.stopPropagation();
+    handleOpenDialog(event);
+    setAnchorEl(null);
+  };
+
+  // 前の月
   const handlePrevMonth = () => {
-    setCurrentMonth(prev => prev.subtract(1, 'month'));
+    setCurrentMonth(currentMonth.subtract(1, 'month'));
   };
 
+  // 次の月
   const handleNextMonth = () => {
-    setCurrentMonth(prev => prev.add(1, 'month'));
+    setCurrentMonth(currentMonth.add(1, 'month'));
   };
 
-  const handleDateClick = (date: Dayjs) => {
-    setSelectedDate(date);
+  // 今日に戻る
+  const handleToday = () => {
+    setCurrentMonth(dayjs());
   };
 
-  const handlePrevDate = () => {
-    setSelectedDate(prev => prev.subtract(1, 'day'));
+  // 日付をクリックして予定を作成
+  const handleCreateEventForDate = (date: dayjs.Dayjs) => {
+    setFormData({
+      summary: '',
+      description: '',
+      startDateTime: date.format('YYYY-MM-DDTHH:mm'),
+      endDateTime: date.add(1, 'hour').format('YYYY-MM-DDTHH:mm'),
+      startDate: date.format('YYYY-MM-DD'),
+      endDate: date.format('YYYY-MM-DD'),
+      location: '',
+      isAllDay: false,
+    });
+    setEditingEvent(null);
+    setOpenDialog(true);
+    setAnchorEl(null);
   };
-
-  const handleNextDate = () => {
-    setSelectedDate(prev => prev.add(1, 'day'));
-  };
-
-  const selectedDiary = getDiaryForDate(selectedDate);
-  const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 3, gap: 3 }}>
-      {/* カレンダー */}
-      <Paper elevation={1} sx={{ p: 3 }}>
-        {/* カレンダーヘッダー */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-          <IconButton onClick={handlePrevMonth} size="small">
-            <ChevronLeftIcon />
-          </IconButton>
-          <Typography variant="h6" fontWeight={600}>
-            {currentMonth.format('YYYY年 M月')}
+    <Box sx={{ p: 3 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <CalendarIcon color="primary" sx={{ fontSize: 32 }} />
+          <Typography variant="h4" fontWeight={700}>
+            Googleカレンダー
           </Typography>
-          <IconButton onClick={handleNextMonth} size="small">
-            <ChevronRightIcon />
-          </IconButton>
         </Box>
-
-        {/* 曜日ヘッダー */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, mb: 1 }}>
-          {weekDays.map((day, idx) => (
-            <Typography
-              key={idx}
-              variant="caption"
-              align="center"
-              fontWeight={600}
-              color={idx === 0 ? 'error.main' : idx === 6 ? 'primary.main' : 'text.secondary'}
+        {isAuthenticated && (
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => handleOpenDialog()}
             >
-              {day}
-            </Typography>
-          ))}
-        </Box>
-
-        {/* カレンダー本体 */}
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 256 }}>
-            <CircularProgress />
-          </Box>
-        ) : error ? (
-          <Alert severity="error">{error}</Alert>
-        ) : (
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1 }}>
-            {generateCalendarDays().map((day, idx) => {
-              const isCurrentMonth = day.month() === currentMonth.month();
-              const isToday = day.isSame(dayjs(), 'day');
-              const isSelected = day.isSame(selectedDate, 'day');
-              const diary = getDiaryForDate(day);
-              const hasDiary = !!diary;
-
-              return (
-                <Box
-                  key={idx}
-                  onClick={() => handleDateClick(day)}
-                  sx={{
-                    aspectRatio: '1',
-                    p: 1,
-                    borderRadius: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    position: 'relative',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    color: !isCurrentMonth ? 'text.disabled' : isSelected ? 'primary.contrastText' : 'text.primary',
-                    bgcolor: isSelected
-                      ? 'primary.main'
-                      : isToday
-                      ? 'primary.light'
-                      : 'transparent',
-                    fontWeight: isSelected || isToday ? 600 : 400,
-                    '&:hover': {
-                      bgcolor: isSelected ? 'primary.dark' : 'action.hover',
-                    },
-                    border: hasDiary ? '2px solid' : 'none',
-                    borderColor: hasDiary ? 'success.main' : 'transparent',
-                  }}
-                >
-                  <Typography variant="body2">{day.date()}</Typography>
-                  {hasDiary && (
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        bottom: 4,
-                        width: 6,
-                        height: 6,
-                        borderRadius: '50%',
-                        bgcolor: 'success.main',
-                      }}
-                    />
-                  )}
-                </Box>
-              );
-            })}
+              予定を追加
+            </Button>
+            <Button variant="outlined" onClick={handleLogout}>
+              ログアウト
+            </Button>
           </Box>
         )}
-      </Paper>
+      </Box>
 
-      {/* 日記詳細 */}
-      <Paper
-        elevation={1}
-        sx={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          p: 3,
-        }}
-      >
-        {/* 日付ナビゲーション */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-          <IconButton onClick={handlePrevDate} size="small">
-            <ChevronLeftIcon />
-          </IconButton>
-          <Typography variant="h6" fontWeight={600}>
-            {selectedDate.format('YYYY年 M月 D日')}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+
+      {!isAuthenticated ? (
+        <Paper elevation={2} sx={{ p: 4, textAlign: 'center' }}>
+          <CheckCircleIcon color="primary" sx={{ fontSize: 64, mb: 2 }} />
+          <Typography variant="h6" gutterBottom>
+            Googleカレンダーと連携
           </Typography>
-          <IconButton onClick={handleNextDate} size="small">
-            <ChevronRightIcon />
-          </IconButton>
-        </Box>
-
-        {/* 日記内容 */}
-        <Box sx={{ flex: 1, overflowY: 'auto' }}>
-          {selectedDiary ? (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {/* メタデータ */}
-              <Stack direction="row" spacing={1} flexWrap="wrap">
-                {selectedDiary.time_of_day && (
-                  <Chip label={selectedDiary.time_of_day} size="small" color="primary" />
-                )}
-                {selectedDiary.location && (
-                  <Chip label={selectedDiary.location} size="small" color="success" />
-                )}
-                {selectedDiary.companion && (
-                  <Chip label={selectedDiary.companion} size="small" color="secondary" />
-                )}
-                {selectedDiary.mood && (
-                  <Chip label={selectedDiary.mood} size="small" sx={{ bgcolor: 'warning.light', color: 'warning.contrastText' }} />
-                )}
-              </Stack>
-
-              {/* 本文 */}
-              <Paper elevation={0} sx={{ p: 2, bgcolor: 'grey.50' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                  <BookIcon color="primary" />
-                  <Typography variant="subtitle1" fontWeight={600}>
-                    日記
-                  </Typography>
-                </Box>
-                <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>
-                  {selectedDiary.content}
-                </Typography>
-              </Paper>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            予定の作成・編集・削除を行うには、Googleアカウントでの認証が必要です。
+          </Typography>
+          <Button
+            variant="contained"
+            size="large"
+            onClick={handleGoogleAuth}
+            sx={{ bgcolor: '#4285f4', '&:hover': { bgcolor: '#357ae8' } }}
+          >
+            Googleで認証
+          </Button>
+        </Paper>
+      ) : (
+        <>
+          {/* カレンダーナビゲーション */}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <IconButton onClick={handlePrevMonth}>
+                <ChevronLeftIcon />
+              </IconButton>
+              <Button
+                variant="outlined"
+                startIcon={<TodayIcon />}
+                onClick={handleToday}
+                sx={{ minWidth: 100 }}
+              >
+                今日
+              </Button>
+              <IconButton onClick={handleNextMonth}>
+                <ChevronRightIcon />
+              </IconButton>
+              <Typography variant="h5" fontWeight={600}>
+                {currentMonth.format('YYYY年M月')}
+              </Typography>
             </Box>
-          ) : (
+          </Box>
+
+          {/* カレンダーグリッド */}
+          <Paper elevation={2} sx={{ overflow: 'hidden', width: '100%' }}>
+            {/* 曜日ヘッダー */}
             <Box
               sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '100%',
-                color: 'text.secondary',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(7, 1fr)',
+                borderBottom: 1,
+                borderColor: 'divider',
+                bgcolor: 'grey.50',
+                width: '100%',
               }}
             >
-              <BookIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
-              <Typography variant="body2">この日の日記はありません</Typography>
+              {['日', '月', '火', '水', '木', '金', '土'].map((day, index) => (
+                <Box
+                  key={day}
+                  sx={{
+                    p: 1.5,
+                    textAlign: 'center',
+                    fontWeight: 600,
+                    color: index === 0 ? 'error.main' : index === 6 ? 'primary.main' : 'text.primary',
+                    minWidth: 0,
+                    overflow: 'hidden',
+                  }}
+                >
+                  {day}
+                </Box>
+              ))}
+            </Box>
+
+            {/* カレンダー日付グリッド */}
+            {loading && events.length === 0 ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : (
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+                  gap: 0.5,
+                  p: 0.5,
+                  width: '100%',
+                }}
+              >
+                {getCalendarDays().map((date, index) => {
+                  const isCurrentMonth = date.month() === currentMonth.month();
+                  const isToday = date.isSame(dayjs(), 'day');
+                  const dayEvents = getEventsForDay(date);
+                  const dayOfWeek = date.day();
+                  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+                  return (
+                    <Box
+                      key={index}
+                      onClick={(e) => handleDayClick(date, e)}
+                      sx={{
+                        minHeight: 120,
+                        minWidth: 0,
+                        width: '100%',
+                        border: 1,
+                        borderColor: 'divider',
+                        bgcolor: isCurrentMonth ? 'background.paper' : 'grey.50',
+                        p: 0.5,
+                        cursor: 'pointer',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        '&:hover': {
+                          bgcolor: 'action.hover',
+                        },
+                      }}
+                    >
+                      {/* 日付 */}
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: isToday ? 700 : 400,
+                          color: isToday
+                            ? 'primary.main'
+                            : isWeekend && isCurrentMonth
+                            ? dayOfWeek === 0
+                              ? 'error.main'
+                              : 'primary.main'
+                            : isCurrentMonth
+                            ? 'text.primary'
+                            : 'text.disabled',
+                          mb: 0.5,
+                        }}
+                      >
+                        {date.date()}
+                      </Typography>
+
+                      {/* 予定リスト */}
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25, width: '100%', minWidth: 0 }}>
+                        {dayEvents.slice(0, 3).map((event) => {
+                          const isAllDay = !event.start.dateTime && !!event.start.date;
+                          const timeText = isAllDay ? '終日' : dayjs(event.start.dateTime).format('HH:mm');
+                          return (
+                            <Box
+                              key={event.id}
+                              onClick={(e) => handleEventClick(event, e)}
+                              sx={{
+                                bgcolor: isAllDay ? 'success.main' : 'primary.main',
+                                color: 'white',
+                                px: 0.5,
+                                py: 0.25,
+                                borderRadius: 0.5,
+                                fontSize: '0.75rem',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                cursor: 'pointer',
+                                width: '100%',
+                                minWidth: 0,
+                                maxWidth: '100%',
+                                '&:hover': {
+                                  bgcolor: isAllDay ? 'success.dark' : 'primary.dark',
+                                },
+                              }}
+                              title={`${timeText} ${event.summary}`}
+                            >
+                              {timeText} {event.summary}
+                            </Box>
+                          );
+                        })}
+                        {dayEvents.length > 3 && (
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: 'text.secondary',
+                              px: 0.5,
+                              fontSize: '0.7rem',
+                            }}
+                          >
+                            他{dayEvents.length - 3}件
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
+            )}
+          </Paper>
+
+          {/* 日付クリック時のポップオーバー */}
+          <Popover
+            open={Boolean(anchorEl)}
+            anchorEl={anchorEl}
+            onClose={() => setAnchorEl(null)}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'left',
+            }}
+          >
+            <Box sx={{ p: 2, minWidth: 300 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6">
+                  {selectedDate && dayjs(selectedDate).format('YYYY年M月D日')}
+                </Typography>
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    if (selectedDate) {
+                      handleCreateEventForDate(dayjs(selectedDate));
+                    }
+                  }}
+                >
+                  <AddIcon />
+                </IconButton>
+              </Box>
+              {selectedDayEvents.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  予定がありません
+                </Typography>
+              ) : (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {selectedDayEvents.map((event) => (
+                    <Box
+                      key={event.id}
+                      sx={{
+                        p: 1,
+                        border: 1,
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                        '&:hover': {
+                          bgcolor: 'action.hover',
+                        },
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="subtitle2" fontWeight={600}>
+                            {event.summary}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {!event.start.dateTime && event.start.date
+                              ? '終日'
+                              : `${dayjs(event.start.dateTime).format('HH:mm')} - ${dayjs(event.end.dateTime).format('HH:mm')}`}
+                          </Typography>
+                          {event.location && (
+                            <Typography variant="caption" color="text.secondary" display="block">
+                              場所: {event.location}
+                            </Typography>
+                          )}
+                        </Box>
+                        <Box>
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              handleOpenDialog(event);
+                              setAnchorEl(null);
+                            }}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => {
+                              handleDeleteEvent(event.id);
+                              setAnchorEl(null);
+                            }}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              )}
+            </Box>
+          </Popover>
+
+          {/* AudioDiaryの予定表示セクション */}
+          {isAuthenticated && (
+            <Box sx={{ mt: 4 }}>
+              <Paper elevation={2} sx={{ p: 2 }}>
+                {/* 日付ナビゲーション */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const current = selectedDiaryDate ? dayjs(selectedDiaryDate) : (getAudioDiaryEventsByDate()[0] ? dayjs(getAudioDiaryEventsByDate()[0].date) : dayjs());
+                        const prevDate = current.subtract(1, 'day');
+                        setSelectedDiaryDate(prevDate.format('YYYY-MM-DD'));
+                        // 月が変わった場合はカレンダーも更新
+                        if (prevDate.month() !== currentMonth.month()) {
+                          setCurrentMonth(prevDate);
+                        }
+                      }}
+                      disabled={!selectedDiaryDate && getAudioDiaryEventsByDate().length === 0}
+                    >
+                      <ChevronLeftIcon />
+                    </IconButton>
+                    <Typography variant="h6" fontWeight={600} sx={{ minWidth: 150, textAlign: 'center' }}>
+                      {selectedDiaryDate
+                        ? dayjs(selectedDiaryDate).format('YYYY年M月D日')
+                        : getAudioDiaryEventsByDate()[0]?.date
+                        ? dayjs(getAudioDiaryEventsByDate()[0].date).format('YYYY年M月D日')
+                        : '日記を選択'}
+                    </Typography>
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const current = selectedDiaryDate ? dayjs(selectedDiaryDate) : (getAudioDiaryEventsByDate()[0] ? dayjs(getAudioDiaryEventsByDate()[0].date) : dayjs());
+                        const nextDate = current.add(1, 'day');
+                        setSelectedDiaryDate(nextDate.format('YYYY-MM-DD'));
+                        // 月が変わった場合はカレンダーも更新
+                        if (nextDate.month() !== currentMonth.month()) {
+                          setCurrentMonth(nextDate);
+                        }
+                      }}
+                      disabled={!selectedDiaryDate && getAudioDiaryEventsByDate().length === 0}
+                    >
+                      <ChevronRightIcon />
+                    </IconButton>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<TodayIcon />}
+                      onClick={() => {
+                        setSelectedDiaryDate(dayjs().format('YYYY-MM-DD'));
+                        setCurrentMonth(dayjs());
+                      }}
+                    >
+                      今日
+                    </Button>
+                  </Box>
+                </Box>
+
+                {/* AudioDiaryの予定がない場合 */}
+                {getAudioDiaryEvents().length === 0 ? (
+                  <Box sx={{ textAlign: 'center', py: 4 }}>
+                    <Typography variant="body1" color="text.secondary">
+                      {selectedDiaryDate
+                        ? `${dayjs(selectedDiaryDate).format('YYYY年M月D日')}のAudioDiaryはありません`
+                        : 'AudioDiaryはありません'}
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {getAudioDiaryEventsByDate().map(({ date, events: dateEvents }) => (
+                      <Box key={date} sx={{ borderBottom: 1, borderColor: 'divider', pb: 2, '&:last-child': { borderBottom: 0 } }}>
+                        {!selectedDiaryDate && (
+                          <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1, color: 'primary.main' }}>
+                            {dayjs(date).format('YYYY年M月D日')}
+                          </Typography>
+                        )}
+                        {dateEvents.map((event) => (
+                          <Box
+                            key={event.id}
+                            sx={{
+                              p: 1.5,
+                              mb: 1,
+                              bgcolor: 'grey.50',
+                              borderRadius: 1,
+                              border: 1,
+                              borderColor: 'divider',
+                              '&:hover': {
+                                bgcolor: 'action.hover',
+                              },
+                            }}
+                          >
+                            {event.description ? (
+                              <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>
+                                {event.description}
+                              </Typography>
+                            ) : (
+                              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                                内容がありません
+                              </Typography>
+                            )}
+                          </Box>
+                        ))}
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+              </Paper>
             </Box>
           )}
-        </Box>
-      </Paper>
+        </>
+      )}
+
+      {/* 予定作成・編集ダイアログ */}
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          {editingEvent ? '予定を編集' : '予定を作成'}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <TextField
+              label="タイトル"
+              value={formData.summary}
+              onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
+              required
+              fullWidth
+            />
+            <TextField
+              label="説明"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              multiline
+              rows={3}
+              fullWidth
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={formData.isAllDay}
+                  onChange={(e) => setFormData({ ...formData, isAllDay: e.target.checked })}
+                />
+              }
+              label="終日"
+            />
+            {formData.isAllDay ? (
+              <>
+                <TextField
+                  label="開始日"
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                  required
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                />
+                <TextField
+                  label="終了日"
+                  type="date"
+                  value={formData.endDate}
+                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                  required
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                />
+              </>
+            ) : (
+              <>
+                <TextField
+                  label="開始日時"
+                  type="datetime-local"
+                  value={formData.startDateTime}
+                  onChange={(e) => setFormData({ ...formData, startDateTime: e.target.value })}
+                  required
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                />
+                <TextField
+                  label="終了日時"
+                  type="datetime-local"
+                  value={formData.endDateTime}
+                  onChange={(e) => setFormData({ ...formData, endDateTime: e.target.value })}
+                  required
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                />
+              </>
+            )}
+            <TextField
+              label="場所"
+              value={formData.location}
+              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              fullWidth
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDialog(false)}>キャンセル</Button>
+          <Button
+            onClick={handleSaveEvent}
+            variant="contained"
+            disabled={!formData.summary || loading}
+          >
+            {loading ? <CircularProgress size={24} /> : '保存'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
+

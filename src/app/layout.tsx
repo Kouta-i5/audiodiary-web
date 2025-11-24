@@ -1,7 +1,6 @@
-import { Box } from '@mui/material';
 import type { Metadata } from "next";
-import ClientThemeProvider from "../components/ClientThemeProvider";
-import Sidebar from "../components/Sidebar";
+import ClientThemeProvider from "../components/clientThemeProvider";
+import ConditionalLayout from "../components/ConditionalLayout";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -21,14 +20,9 @@ export default function RootLayout({
     <html lang="ja">
       <body>
         <ClientThemeProvider>
-          <Box sx={{ display: 'flex', height: '100vh' }}>
-            <Sidebar />
-            <Box component="main" sx={{ flex: 1, overflowY: 'auto' }}>
-              <Box sx={{ maxWidth: '1400px', mx: 'auto', p: 3 }}>
-                {children}
-              </Box>
-            </Box>
-          </Box>
+          <ConditionalLayout>
+            {children}
+          </ConditionalLayout>
         </ClientThemeProvider>
       </body>
     </html>
