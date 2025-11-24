@@ -154,11 +154,11 @@ export default function HomePage() {
         <PanelGroup direction="horizontal" style={{ height: '100vh', width: '100%' }}>
           {/* 左側: カレンダーパネルとAudioDiaryの上下分割 */}
           <Panel defaultSize={66.667} minSize={33.333}>
-            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 2 }}>
+            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 1 }}>
               <PanelGroup direction="vertical" style={{ height: '100%', width: '100%' }}>
                 {/* 上側: カレンダー */}
-                <Panel defaultSize={80} minSize={60}>
-                  <Box sx={{ height: '100%', p: 2 }}>
+                <Panel defaultSize={75} minSize={50}>
+                  <Box sx={{ height: '100%', p: 1 }}>
                     <Paper
                       elevation={2}
                       sx={{
@@ -237,8 +237,8 @@ export default function HomePage() {
                 </PanelResizeHandle>
 
                 {/* 下側: AudioDiary */}
-                <Panel defaultSize={20} minSize={20}>
-                  <Box sx={{ height: '100%', p: 2 }}>
+                <Panel defaultSize={25} minSize={25}>
+                  <Box sx={{ height: '100%', p: 1 }}>
                     <Paper
                       elevation={2}
                       sx={{

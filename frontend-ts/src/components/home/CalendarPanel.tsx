@@ -474,7 +474,7 @@ export default function CalendarPanel({ onDateSelect, onMonthChange }: CalendarP
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <CalendarIcon color="primary" sx={{ fontSize: 32 }} />
           <Typography variant="h4" fontWeight={700}>
-            Googleカレンダー
+            GoogleClaendar
           </Typography>
         </Box>
         {isAuthenticated && (
@@ -525,20 +525,20 @@ export default function CalendarPanel({ onDateSelect, onMonthChange }: CalendarP
               <IconButton onClick={handlePrevMonth}>
                 <ChevronLeftIcon />
               </IconButton>
+              <Typography variant="h5" fontWeight={600} sx={{ minWidth: 150, textAlign: 'center' }}>
+                {currentMonth.format('YYYY年M月')}
+              </Typography>
+              <IconButton onClick={handleNextMonth}>
+                <ChevronRightIcon />
+              </IconButton>
               <Button
                 variant="outlined"
                 startIcon={<TodayIcon />}
                 onClick={handleToday}
-                sx={{ minWidth: 100 }}
+                size="small"
               >
                 今日
               </Button>
-              <IconButton onClick={handleNextMonth}>
-                <ChevronRightIcon />
-              </IconButton>
-              <Typography variant="h5" fontWeight={600}>
-                {currentMonth.format('YYYY年M月')}
-              </Typography>
             </Box>
           </Box>
 

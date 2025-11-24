@@ -233,7 +233,7 @@ export default function AudioDiaryPanel({
             >
               <ChevronLeftIcon />
             </IconButton>
-            <Typography variant="h6" fontWeight={600} sx={{ minWidth: 150, textAlign: 'center' }}>
+            <Typography variant="h5" fontWeight={600} sx={{ minWidth: 150, textAlign: 'center' }}>
               {selectedDiaryDate
                 ? dayjs(selectedDiaryDate).format('YYYY年M月D日')
                 : getAudioDiaryEventsByDate()[0]?.date

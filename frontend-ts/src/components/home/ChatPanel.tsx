@@ -410,6 +410,8 @@ export default function ChatPanel({ selectedDate }: ChatPanelProps) {
                           />
                           <ListItemText
                             primary={event.summary}
+                            primaryTypographyProps={{ component: 'div', fontWeight: 500 }}
+                            secondaryTypographyProps={{ component: 'div' }}
                             secondary={
                               <Box>
                                 {timeText && (
