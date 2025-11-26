@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+  api:
+    profiles: ["dev"]
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile.dev
+    container_name: audiodiary-backend
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    volumes:
+      - ../backend:/workspace/backend
+      - backend-data:/workspace/backend/.venv
+    env_file:
+      - ./.env
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    working_dir: /workspace/backend
+    command: uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/health || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks:
+      - audiodiary-network
+
+  api-prod:
+    profiles: ["prod"]
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    container_name: audiodiary-backend-prod
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    environment:
+      - ENV=production
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    working_dir: /workspace/backend
+    command: ./.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/health || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks:
+      - audiodiary-network
+
+volumes:
+  backend-data:
+
+networks:
+  audiodiary-network:
+    driver: bridge
+
