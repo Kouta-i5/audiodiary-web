@@ -22,6 +22,7 @@ import {
   ListItemText,
   Paper,
   TextField,
+  Tooltip,
   Typography
 } from '@mui/material';
 import dayjs from 'dayjs';
@@ -46,6 +47,9 @@ export default function ChatPanel({ selectedDate }: ChatPanelProps) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [recording, setRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<BlobPart[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [selectedEvents, setSelectedEvents] = useState<Set<string>>(new Set());
   const [loadingEvents, setLoadingEvents] = useState(false);
@@ -57,6 +61,66 @@ export default function ChatPanel({ selectedDate }: ChatPanelProps) {
   const [summaryDateTime, setSummaryDateTime] = useState('');
   const [creatingDiary, setCreatingDiary] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // 音声録音開始
+  const handleStartRecording = async () => {
+    if (recording) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      recordedChunksRef.current = [];
+      mr.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunksRef.current.push(e.data);
+      };
+      mr.onstop = async () => {
+        const blob = new Blob(recordedChunksRef.current, { type: 'audio/webm' });
+        const file = new File([blob], 'audio.webm', { type: 'audio/webm' });
+        try {
+          setLoading(true);
+          const { transcribeAudio } = await import('../../utils/api');
+          const text = await transcribeAudio(file);
+          setInput((prev) => (prev ? prev + '\n' + text : text));
+        } catch {
+          setError('音声の文字起こしに失敗しました');
+        } finally {
+          setLoading(false);
+        }
+      };
+      mediaRecorderRef.current = mr;
+      mr.start();
+      setRecording(true);
+    } catch {
+      setError('マイクへのアクセスに失敗しました');
+    }
+  };
+
+  // 音声録音停止
+  const handleStopRecording = () => {
+    if (!recording) return;
+    const mr = mediaRecorderRef.current;
+    if (mr && mr.state !== 'inactive') {
+      mr.stop();
+    }
+    setRecording(false);
+  };
+
+  // 直近のアシスタント応答をTTSで再生
+  const handlePlayLastAssistant = async () => {
+    const last = [...messages].reverse().find((m) => m.role === 'assistant');
+    if (!last) return;
+    try {
+      setLoading(true);
+      const { synthesizeTTS } = await import('../../utils/api');
+      const blob = await synthesizeTTS(last.content, 'alloy', 'mp3');
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.play();
+    } catch {
+      setError('音声の再生に失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // 選択された日付のイベントを取得
   useEffect(() => {
@@ -678,7 +742,20 @@ export default function ChatPanel({ selectedDate }: ChatPanelProps) {
 
           {/* メッセージ入力とアクション（会話開始後のみ有効） */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <Box sx={{ display: 'flex', gap: 1 }}>
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
+              <Tooltip title={recording ? "録音停止" : "録音開始"}>
+                <span>
+                  <Button
+                    variant={recording ? 'contained' : 'outlined'}
+                    color={recording ? 'error' : 'primary'}
+                    onClick={recording ? handleStopRecording : handleStartRecording}
+                    disabled={loading || !conversationStarted}
+                    sx={{ flexShrink: 0 }}
+                  >
+                    {recording ? '録音停止' : '録音開始'}
+                  </Button>
+                </span>
+              </Tooltip>
               <TextField
                 fullWidth
                 size="small"
@@ -704,6 +781,13 @@ export default function ChatPanel({ selectedDate }: ChatPanelProps) {
               >
                 <SendIcon />
               </IconButton>
+              <Tooltip title="最新の返信を読み上げ">
+                <span>
+                  <Button variant="outlined" onClick={handlePlayLastAssistant} disabled={loading || !conversationStarted}>
+                    読み上げ
+                  </Button>
+                </span>
+              </Tooltip>
             </Box>
             
             {/* 会話終了ボタン */}

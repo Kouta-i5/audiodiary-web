@@ -4,6 +4,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1 import chat
+from app.api.v1 import stt as stt_api
+from app.api.v1 import tts as tts_api
 
 load_dotenv()
 
@@ -22,6 +24,8 @@ app.add_middleware(
 )
 
 app.include_router(chat.router, prefix="/api/v1/chat", tags=["chat"])
+app.include_router(stt_api.router, prefix="/api/v1/stt", tags=["stt"])
+app.include_router(tts_api.router, prefix="/api/v1/tts", tags=["tts"])
 
 
 @app.get("/")
