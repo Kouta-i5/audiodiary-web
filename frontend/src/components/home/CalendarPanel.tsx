@@ -1,40 +1,42 @@
 'use client';
 
 import {
-    Add as AddIcon,
-    CalendarToday as CalendarIcon,
-    CheckCircle as CheckCircleIcon,
-    ChevronLeft as ChevronLeftIcon,
-    ChevronRight as ChevronRightIcon,
-    Delete as DeleteIcon,
-    Edit as EditIcon,
-    Today as TodayIcon,
+  Add as AddIcon,
+  CalendarToday as CalendarIcon,
+  CheckCircle as CheckCircleIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
+  Delete as DeleteIcon,
+  Edit as EditIcon,
+  Today as TodayIcon,
 } from '@mui/icons-material';
 import {
-    Alert,
-    Box,
-    Button,
-    Checkbox,
-    CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    FormControlLabel,
-    IconButton,
-    Paper,
-    Popover,
-    TextField,
-    Typography
+  Alert,
+  Box,
+  Button,
+  Checkbox,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
+  IconButton,
+  Paper,
+  Popover,
+  TextField,
+  Typography
 } from '@mui/material';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ja';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { useCallback, useEffect, useState, useRef } from 'react';
+import isoWeek from 'dayjs/plugin/isoWeek';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
+dayjs.extend(isoWeek);
 dayjs.locale('ja');
 
 interface CalendarEvent {
@@ -76,6 +78,8 @@ export default function CalendarPanel({ onDateSelect, onMonthChange }: CalendarP
   const [selectedDayEvents, setSelectedDayEvents] = useState<CalendarEvent[]>([]);
   const [maxEventsPerDay, setMaxEventsPerDay] = useState(3);
   const calendarGridRef = useRef<HTMLDivElement>(null);
+  type ViewMode = 'month' | 'week' | '3day' | 'day';
+  const [viewMode, setViewMode] = useState<ViewMode>('month');
 
   // URLパラメータからトークンを取得
   useEffect(() => {
@@ -318,22 +322,30 @@ export default function CalendarPanel({ onDateSelect, onMonthChange }: CalendarP
     setEvents([]);
   };
 
-  // カレンダーグリッドを生成
-  const getCalendarDays = () => {
-    const startOfMonth = currentMonth.startOf('month');
-    const endOfMonth = currentMonth.endOf('month');
-    const startOfCalendar = startOfMonth.startOf('week');
-    const endOfCalendar = endOfMonth.endOf('week');
-    
-    const days = [];
-    let day = startOfCalendar;
-    
-    while (day.isBefore(endOfCalendar) || day.isSame(endOfCalendar, 'day')) {
-      days.push(day);
-      day = day.add(1, 'day');
+  // 表示範囲の日付配列を生成
+  const getVisibleDays = () => {
+    if (viewMode === 'month') {
+      const startOfMonth = currentMonth.startOf('month');
+      const endOfMonth = currentMonth.endOf('month');
+      const startOfCalendar = startOfMonth.startOf('isoWeek');
+      const endOfCalendar = endOfMonth.endOf('isoWeek');
+      const days: dayjs.Dayjs[] = [];
+      let day = startOfCalendar;
+      while (day.isBefore(endOfCalendar) || day.isSame(endOfCalendar, 'day')) {
+        days.push(day);
+        day = day.add(1, 'day');
+      }
+      return days;
     }
-    
-    return days;
+    if (viewMode === 'week') {
+      const start = currentMonth.startOf('isoWeek');
+      return Array.from({ length: 7 }, (_, i) => start.add(i, 'day'));
+    }
+    if (viewMode === '3day') {
+      const start = currentMonth.startOf('day');
+      return Array.from({ length: 3 }, (_, i) => start.add(i, 'day'));
+    }
+    return [currentMonth.startOf('day')];
   };
 
   // 特定の日の予定を取得
@@ -358,23 +370,10 @@ export default function CalendarPanel({ onDateSelect, onMonthChange }: CalendarP
   useEffect(() => {
     const updateMaxEvents = () => {
       if (!calendarGridRef.current) return;
-      
-      // getCalendarDaysを関数内で直接計算（currentMonthに依存）
-      const startOfMonth = currentMonth.startOf('month');
-      const endOfMonth = currentMonth.endOf('month');
-      const startOfCalendar = startOfMonth.startOf('week');
-      const endOfCalendar = endOfMonth.endOf('week');
-      
-      const days: dayjs.Dayjs[] = [];
-      let day = startOfCalendar;
-      
-      while (day.isBefore(endOfCalendar) || day.isSame(endOfCalendar, 'day')) {
-        days.push(day);
-        day = day.add(1, 'day');
-      }
-      
+
       const gridHeight = calendarGridRef.current.clientHeight;
-      const weekCount = Math.ceil(days.length / 7);
+      const days = getVisibleDays();
+      const weekCount = viewMode === 'month' ? Math.ceil(days.length / 7) : 1;
       const availableHeightPerWeek = gridHeight / weekCount;
       const headerHeight = 48; // 曜日ヘッダーの高さ（概算）
       const padding = 8; // パディング
@@ -402,7 +401,7 @@ export default function CalendarPanel({ onDateSelect, onMonthChange }: CalendarP
       clearTimeout(timer);
       resizeObserver.disconnect();
     };
-  }, [currentMonth, events]);
+  }, [currentMonth, events, viewMode]);
 
   // 日をクリック
   const handleDayClick = (date: dayjs.Dayjs, event: React.MouseEvent<HTMLElement>) => {
@@ -424,18 +423,28 @@ export default function CalendarPanel({ onDateSelect, onMonthChange }: CalendarP
     setAnchorEl(null);
   };
 
-  // 前の月
+  // 前へ
   const handlePrevMonth = () => {
-    const newMonth = currentMonth.subtract(1, 'month');
+    const step =
+      viewMode === 'month' ? { unit: 'month', amount: 1 } :
+      viewMode === 'week' ? { unit: 'week', amount: 1 } :
+      viewMode === '3day' ? { unit: 'day', amount: 3 } :
+      { unit: 'day', amount: 1 } as const;
+    const newMonth = currentMonth.subtract(step.amount as number, step.unit as dayjs.ManipulateType);
     setCurrentMonth(newMonth);
     if (onMonthChange) {
       onMonthChange(newMonth);
     }
   };
 
-  // 次の月
+  // 次へ
   const handleNextMonth = () => {
-    const newMonth = currentMonth.add(1, 'month');
+    const step =
+      viewMode === 'month' ? { unit: 'month', amount: 1 } :
+      viewMode === 'week' ? { unit: 'week', amount: 1 } :
+      viewMode === '3day' ? { unit: 'day', amount: 3 } :
+      { unit: 'day', amount: 1 } as const;
+    const newMonth = currentMonth.add(step.amount as number, step.unit as dayjs.ManipulateType);
     setCurrentMonth(newMonth);
     if (onMonthChange) {
       onMonthChange(newMonth);
@@ -526,7 +535,10 @@ export default function CalendarPanel({ onDateSelect, onMonthChange }: CalendarP
                 <ChevronLeftIcon />
               </IconButton>
               <Typography variant="h5" fontWeight={600} sx={{ minWidth: 150, textAlign: 'center' }}>
-                {currentMonth.format('YYYY年M月')}
+                {viewMode === 'month' && currentMonth.format('YYYY年M月')}
+                {viewMode === 'week' && `${currentMonth.startOf('isoWeek').format('YYYY年M月D日')} - ${currentMonth.endOf('isoWeek').format('M月D日')}`}
+                {viewMode === '3day' && `${currentMonth.startOf('day').format('YYYY年M月D日')} - ${currentMonth.startOf('day').add(2, 'day').format('M月D日')}`}
+                {viewMode === 'day' && currentMonth.format('YYYY年M月D日')}
               </Typography>
               <IconButton onClick={handleNextMonth}>
                 <ChevronRightIcon />
@@ -538,6 +550,20 @@ export default function CalendarPanel({ onDateSelect, onMonthChange }: CalendarP
                 size="small"
               >
                 今日
+              </Button>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button size="small" variant={viewMode === 'month' ? 'contained' : 'outlined'} onClick={() => setViewMode('month')}>
+                月
+              </Button>
+              <Button size="small" variant={viewMode === 'week' ? 'contained' : 'outlined'} onClick={() => setViewMode('week')}>
+                週
+              </Button>
+              <Button size="small" variant={viewMode === '3day' ? 'contained' : 'outlined'} onClick={() => setViewMode('3day')}>
+                3日
+              </Button>
+              <Button size="small" variant={viewMode === 'day' ? 'contained' : 'outlined'} onClick={() => setViewMode('day')}>
+                日
               </Button>
             </Box>
           </Box>
@@ -557,11 +583,11 @@ export default function CalendarPanel({ onDateSelect, onMonthChange }: CalendarP
                 flexDirection: 'column',
               }}
             >
-            {/* 曜日ヘッダー */}
+            {/* ヘッダー */}
             <Box
               sx={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(7, 1fr)',
+                gridTemplateColumns: `repeat(${viewMode === 'month' ? 7 : getVisibleDays().length}, 1fr)`,
                 borderBottom: 2,
                 borderColor: 'divider',
                 background: 'linear-gradient(180deg, #ffffff 0%, #fafafa 100%)',
@@ -569,21 +595,32 @@ export default function CalendarPanel({ onDateSelect, onMonthChange }: CalendarP
                 flexShrink: 0,
               }}
             >
-              {['日', '月', '火', '水', '木', '金', '土'].map((day, index) => (
+              {(viewMode === 'month'
+                ? ['月', '火', '水', '木', '金', '土', '日']
+                : getVisibleDays().map(d => `${d.format('M/D')}(${['日','月','火','水','木','金','土'][d.day()]})`)
+              ).map((label, index) => (
                 <Box
-                  key={day}
+                  key={`${label}-${index}`}
                   sx={{
                     p: 1.5,
                     textAlign: 'center',
                     fontWeight: 700,
                     fontSize: '0.875rem',
-                    color: index === 0 ? 'error.main' : index === 6 ? 'primary.main' : 'text.primary',
+                    color: (
+                      viewMode === 'month'
+                        ? (index === 6 ? 'error.main' : index === 5 ? 'primary.main' : 'text.primary')
+                        : (getVisibleDays()[index].day() === 0
+                            ? 'error.main'
+                            : getVisibleDays()[index].day() === 6
+                              ? 'primary.main'
+                              : 'text.primary')
+                    ),
                     minWidth: 0,
                     overflow: 'hidden',
                     letterSpacing: '0.05em',
                   }}
                 >
-                  {day}
+                  {label}
                 </Box>
               ))}
             </Box>
@@ -598,7 +635,7 @@ export default function CalendarPanel({ onDateSelect, onMonthChange }: CalendarP
                 ref={calendarGridRef}
                 sx={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+                  gridTemplateColumns: `repeat(${viewMode === 'month' ? 7 : getVisibleDays().length}, minmax(0, 1fr))`,
                   gridAutoRows: '1fr',
                   gap: 0.5,
                   p: 0.5,
@@ -607,7 +644,7 @@ export default function CalendarPanel({ onDateSelect, onMonthChange }: CalendarP
                   minHeight: 0,
                 }}
               >
-                {getCalendarDays().map((date, index) => {
+                {getVisibleDays().map((date, index) => {
                   const isCurrentMonth = date.month() === currentMonth.month();
                   const isToday = date.isSame(dayjs(), 'day');
                   const dayEvents = getEventsForDay(date);
@@ -629,7 +666,7 @@ export default function CalendarPanel({ onDateSelect, onMonthChange }: CalendarP
                           ? isToday
                             ? 'rgba(25, 118, 210, 0.04)'
                             : 'background.paper'
-                          : 'grey.50',
+                          : viewMode === 'month' ? 'grey.50' : 'background.paper',
                         p: 0.75,
                         cursor: 'pointer',
                         position: 'relative',

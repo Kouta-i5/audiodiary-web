@@ -30,11 +30,13 @@ interface CalendarEvent {
 interface AudioDiaryPanelProps {
   currentMonth?: dayjs.Dayjs;
   onMonthChange?: (month: dayjs.Dayjs) => void;
+  selectedDate?: string;
 }
 
 export default function AudioDiaryPanel({
   currentMonth: externalCurrentMonth,
   onMonthChange,
+  selectedDate: externalSelectedDate,
 }: AudioDiaryPanelProps) {
   const [selectedDiaryDate, setSelectedDiaryDate] = useState<string | null>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -88,6 +90,17 @@ export default function AudioDiaryPanel({
       setCurrentMonth(externalCurrentMonth);
     }
   }, [externalCurrentMonth]);
+
+  // 外部のselectedDateが変更されたら追従
+  useEffect(() => {
+    if (externalSelectedDate) {
+      setSelectedDiaryDate(externalSelectedDate);
+      const newMonth = dayjs(externalSelectedDate);
+      if (!currentMonth.isSame(newMonth, 'month')) {
+        setCurrentMonth(newMonth);
+      }
+    }
+  }, [externalSelectedDate]);
 
   // すべてのAudioDiary予定を取得（フィルタリングなし）
   const getAllAudioDiaryEvents = () => {

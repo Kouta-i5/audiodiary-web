@@ -1,13 +1,13 @@
 'use client';
 
 import { Box, CircularProgress, Paper } from '@mui/material';
+import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import AudioDiaryPanel from '../components/home/AudioDiaryPanel';
 import CalendarPanel from '../components/home/CalendarPanel';
 import ChatPanel from '../components/home/ChatPanel';
-import dayjs from 'dayjs';
 
 export default function HomePage() {
   const router = useRouter();
@@ -250,6 +250,7 @@ export default function HomePage() {
                       }}
                     >
                       <AudioDiaryPanel
+                        selectedDate={selectedDate}
                         currentMonth={currentMonth}
                         onMonthChange={setCurrentMonth}
                       />
