@@ -18,7 +18,8 @@ COPY backend/pyproject.toml backend/uv.lock backend/README.md /workspace/backend
 
 WORKDIR /workspace/backend
 
-RUN uv sync && ./.venv/bin/python -m pip install ".[dev]"
+# dev依存も含めて同期（pyprojectの[project.optional-dependencies].dev）
+RUN uv sync --extra dev
 
 EXPOSE 8000
 

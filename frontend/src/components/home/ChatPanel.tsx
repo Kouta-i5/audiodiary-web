@@ -1,9 +1,9 @@
 'use client';
 
 import {
+  Chat as ChatIcon,
   CheckCircle as CheckCircleIcon,
   Send as SendIcon,
-  Chat as ChatIcon,
   Summarize as SummarizeIcon,
 } from '@mui/icons-material';
 import {
@@ -631,10 +631,12 @@ export default function ChatPanel({ selectedDate }: ChatPanelProps) {
                       sx={{
                         p: 1.75,
                         maxWidth: '80%',
-                        bgcolor: msg.role === 'user'
+                        // 自分のメッセージはグラデーション背景＋白文字
+                        bgcolor: msg.role === 'user' ? '#667eea' : 'background.paper',
+                        background: msg.role === 'user'
                           ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                          : 'background.paper',
-                        color: msg.role === 'user' ? 'white' : 'text.primary',
+                          : 'none',
+                        color: msg.role === 'user' ? '#ffffff' : 'text.primary',
                         borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                         boxShadow: msg.role === 'user'
                           ? '0px 4px 12px rgba(102, 126, 234, 0.25)'
@@ -680,11 +682,15 @@ export default function ChatPanel({ selectedDate }: ChatPanelProps) {
               <TextField
                 fullWidth
                 size="small"
+                multiline
+                minRows={1}
+                maxRows={6}
                 placeholder={conversationStarted ? "メッセージを入力..." : "予定を選択して会話を開始してください"}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey && conversationStarted) {
+                  // Enterは改行、Cmd/Ctrl+Enterで送信
+                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && conversationStarted) {
                     e.preventDefault();
                     handleSend();
                   }
