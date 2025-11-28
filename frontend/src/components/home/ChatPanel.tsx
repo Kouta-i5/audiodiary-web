@@ -61,6 +61,34 @@ export default function ChatPanel({ selectedDate }: ChatPanelProps) {
   const [summaryDateTime, setSummaryDateTime] = useState('');
   const [creatingDiary, setCreatingDiary] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [ttsEnabled, setTtsEnabled] = useState(false);
+  const lastAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const speakText = async (text: string) => {
+    try {
+      const { synthesizeTTS } = await import('../../utils/api');
+      const blob = await synthesizeTTS(text, 'alloy', 'mp3');
+      const url = URL.createObjectURL(blob);
+      if (lastAudioRef.current) {
+        try {
+          lastAudioRef.current.pause();
+        } catch {}
+      }
+      const audio = new Audio(url);
+      lastAudioRef.current = audio;
+      audio.play();
+    } catch {
+      setError('音声の再生に失敗しました');
+    }
+  };
+
+  useEffect(() => {
+    if (!ttsEnabled && lastAudioRef.current) {
+      try {
+        lastAudioRef.current.pause();
+      } catch {}
+    }
+  }, [ttsEnabled]);
 
   // 音声録音開始
   const handleStartRecording = async () => {
@@ -77,9 +105,18 @@ export default function ChatPanel({ selectedDate }: ChatPanelProps) {
         const file = new File([blob], 'audio.webm', { type: 'audio/webm' });
         try {
           setLoading(true);
-          const { transcribeAudio } = await import('../../utils/api');
-          const text = await transcribeAudio(file);
-          setInput((prev) => (prev ? prev + '\n' + text : text));
+          const { streamTranscription, transcribeAudio } = await import('../../utils/api');
+          const basePrefix = (prev => (prev ? prev + '\n' : ''))(input);
+          try {
+            const finalText = await streamTranscription(file, (partial: string) => {
+              setInput(basePrefix + partial);
+            });
+            setInput(basePrefix + finalText);
+          } catch {
+            // フォールバック: 非ストリームAPI
+            const text = await transcribeAudio(file);
+            setInput(basePrefix + text);
+          }
         } catch {
           setError('音声の文字起こしに失敗しました');
         } finally {
@@ -104,23 +141,7 @@ export default function ChatPanel({ selectedDate }: ChatPanelProps) {
     setRecording(false);
   };
 
-  // 直近のアシスタント応答をTTSで再生
-  const handlePlayLastAssistant = async () => {
-    const last = [...messages].reverse().find((m) => m.role === 'assistant');
-    if (!last) return;
-    try {
-      setLoading(true);
-      const { synthesizeTTS } = await import('../../utils/api');
-      const blob = await synthesizeTTS(last.content, 'alloy', 'mp3');
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audio.play();
-    } catch {
-      setError('音声の再生に失敗しました');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // 手動読み上げボタンは削除（自動読み上げのみ）
 
   // 選択された日付のイベントを取得
   useEffect(() => {
@@ -240,6 +261,9 @@ export default function ChatPanel({ selectedDate }: ChatPanelProps) {
         { role: 'user', content: initialMessage },
         { role: 'assistant', content: response }
       ]);
+      if (ttsEnabled) {
+        void speakText(response);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : '会話の開始に失敗しました');
       setConversationStarted(false);
@@ -267,6 +291,9 @@ export default function ChatPanel({ selectedDate }: ChatPanelProps) {
       }
 
       setMessages([...currentMessages, { role: 'assistant', content: response }]);
+      if (ttsEnabled) {
+        void speakText(response);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'メッセージの送信に失敗しました');
       // エラー時はユーザーメッセージを元に戻す
@@ -403,6 +430,14 @@ export default function ChatPanel({ selectedDate }: ChatPanelProps) {
             AudioDiary
           </Typography>
         </Box>
+        <Button
+          variant={ttsEnabled ? 'contained' : 'outlined'}
+          color={ttsEnabled ? 'secondary' : 'inherit'}
+          onClick={() => setTtsEnabled((v) => !v)}
+          sx={{ whiteSpace: 'nowrap' }}
+        >
+          {ttsEnabled ? '読み上げ:オン' : '読み上げ:オフ'}
+        </Button>
       </Box>
 
       {error && (
@@ -781,13 +816,6 @@ export default function ChatPanel({ selectedDate }: ChatPanelProps) {
               >
                 <SendIcon />
               </IconButton>
-              <Tooltip title="最新の返信を読み上げ">
-                <span>
-                  <Button variant="outlined" onClick={handlePlayLastAssistant} disabled={loading || !conversationStarted}>
-                    読み上げ
-                  </Button>
-                </span>
-              </Tooltip>
             </Box>
             
             {/* 会話終了ボタン */}

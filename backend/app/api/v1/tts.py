@@ -18,9 +18,17 @@ async def synthesize(req: TTSRequest) -> Response:
     try:
         service = OpenAIService()
         audio = service.synthesize_speech(req.text, voice=req.voice, audio_format=req.format)
-        media_type = "audio/mpeg" if req.format == "mp3" else "application/octet-stream"
+        media_type_map = {
+            "mp3": "audio/mpeg",
+            "wav": "audio/wav",
+            "ogg": "audio/ogg",
+            "aac": "audio/aac",
+            "flac": "audio/flac",
+            "webm": "audio/webm",
+        }
+        media_type = media_type_map.get(req.format.lower(), "application/octet-stream")
         return Response(content=audio, media_type=media_type)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 

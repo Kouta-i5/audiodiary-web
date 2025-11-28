@@ -17,6 +17,7 @@ services:
       - ./.env
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     working_dir: /workspace/backend
     command: uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     healthcheck:
@@ -39,6 +40,7 @@ services:
     environment:
       - ENV=production
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     working_dir: /workspace/backend
     command: ./.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
     healthcheck:

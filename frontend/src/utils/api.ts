@@ -60,3 +60,82 @@ export async function fetchMessage(
     }
 }
 
+export async function transcribeAudio(file: File): Promise<string> {
+    const form = new FormData();
+    form.append('file', file);
+    const res = await fetch(`${baseURL}/api/v1/stt/transcribe`, {
+        method: 'POST',
+        body: form,
+    });
+    if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`文字起こしAPIエラー: ${text}`);
+    }
+    const data = await res.json();
+    return data.text as string;
+}
+
+export async function streamTranscription(
+    file: File,
+    onPartial: (partialText: string) => void
+): Promise<string> {
+    const form = new FormData();
+    form.append('file', file);
+    const res = await fetch(`${baseURL}/api/v1/stt/transcribe/stream`, {
+        method: 'POST',
+        body: form,
+    });
+    if (!res.ok || !res.body) {
+        const text = await res.text().catch(() => '');
+        throw new Error(`文字起こしストリーム開始に失敗しました: ${text}`);
+    }
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+    let accumulated = '';
+    try {
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            // SSEのイベント区切りは \n\n
+            const parts = buffer.split('\n\n');
+            buffer = parts.pop() ?? '';
+            for (const chunk of parts) {
+                const line = chunk.split('\n').find(l => l.startsWith('data: '));
+                if (!line) continue;
+                const payload = line.slice(6);
+                try {
+                    const data = JSON.parse(payload);
+                    if (typeof data.delta === 'string') {
+                        accumulated += data.delta;
+                        onPartial(accumulated);
+                    } else if (data.done && typeof data.text === 'string') {
+                        accumulated = data.text;
+                        onPartial(accumulated);
+                    }
+                } catch {
+                    // JSONでないデータは無視
+                }
+            }
+        }
+        return accumulated.trimEnd();
+    } finally {
+        reader.releaseLock();
+    }
+}
+
+export async function synthesizeTTS(text: string, voice: string = 'alloy', format: string = 'mp3'): Promise<Blob> {
+    const res = await fetch(`${baseURL}/api/v1/tts/synthesize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, voice, format }),
+    });
+    if (!res.ok) {
+        const t = await res.text().catch(() => '');
+        throw new Error(`TTSAPIエラー: ${t}`);
+    }
+    const blob = await res.blob();
+    return blob;
+}
+
