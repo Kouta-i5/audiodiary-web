@@ -7,7 +7,7 @@ import {
     SummarizeResponse,
 } from "./schemas";
 
-const baseURL = "http://localhost:8001";
+const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8001";
 
 const api = axios.create({
     baseURL,
