@@ -1,44 +1,58 @@
 import { google } from 'googleapis';
 
-// Google OAuth 2.0設定
-const redirectUri = process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI;
+// Google OAuth 2.0設定を取得
+function getOAuth2Client() {
+  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const redirectUri = process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI;
 
-if (!redirectUri) {
-  throw new Error('NEXT_PUBLIC_GOOGLE_REDIRECT_URI が設定されていません');
+  if (!clientId) {
+    throw new Error('GOOGLE_CLIENT_ID または NEXT_PUBLIC_GOOGLE_CLIENT_ID が設定されていません');
+  }
+  if (!clientSecret) {
+    throw new Error('GOOGLE_CLIENT_SECRET が設定されていません');
+  }
+  if (!redirectUri) {
+    throw new Error('GOOGLE_REDIRECT_URI または NEXT_PUBLIC_GOOGLE_REDIRECT_URI が設定されていません');
+  }
+
+  return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
 }
-
-const oauth2Client = new google.auth.OAuth2(
-  process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  redirectUri
-);
 
 // 認証URLを生成
 export function getAuthUrl(): string {
-  const scopes = process.env.NEXT_PUBLIC_GOOGLE_SCOPES
-    ? process.env.NEXT_PUBLIC_GOOGLE_SCOPES.split(',')
-    : ['https://www.googleapis.com/auth/calendar'];
+  const oauth2Client = getOAuth2Client();
+  const scopes = process.env.NEXT_PUBLIC_GOOGLE_SCOPES || process.env.GOOGLE_SCOPES;
+  const scopeArray = scopes
+    ? scopes.split(',').map((s) => s.trim())
+    : ['openid', 'email', 'profile', 'https://www.googleapis.com/auth/calendar'];
 
   return oauth2Client.generateAuthUrl({
     access_type: 'offline',
-    scope: scopes,
+    scope: scopeArray,
     prompt: 'consent',
   });
 }
 
 // トークンを交換
 export async function getTokenFromCode(code: string) {
-  const { tokens } = await oauth2Client.getToken(code);
-  return tokens;
-}
-
-// トークンでOAuthクライアントを設定
-export function setCredentials(tokens: { access_token?: string; refresh_token?: string }) {
-  oauth2Client.setCredentials(tokens);
+  const oauth2Client = getOAuth2Client();
+  try {
+    const { tokens } = await oauth2Client.getToken(code);
+    return tokens;
+  } catch (error) {
+    console.error('トークン交換エラー:', error);
+    throw new Error(`トークンの取得に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 // Google Calendar APIクライアントを取得
-export function getCalendarClient() {
+export function getCalendarClient(accessToken: string, refreshToken: string) {
+  const oauth2Client = getOAuth2Client();
+  oauth2Client.setCredentials({
+    access_token: accessToken,
+    refresh_token: refreshToken,
+  });
   return google.calendar({ version: 'v3', auth: oauth2Client });
 }
 
@@ -54,12 +68,7 @@ export async function createEvent(
     location?: string;
   }
 ) {
-  oauth2Client.setCredentials({
-    access_token: accessToken,
-    refresh_token: refreshToken,
-  });
-
-  const calendar = getCalendarClient();
+  const calendar = getCalendarClient(accessToken, refreshToken);
   const response = await calendar.events.insert({
     calendarId: 'primary',
     requestBody: eventData,
@@ -75,12 +84,7 @@ export async function getEvents(
   timeMin?: string,
   timeMax?: string
 ) {
-  oauth2Client.setCredentials({
-    access_token: accessToken,
-    refresh_token: refreshToken,
-  });
-
-  const calendar = getCalendarClient();
+  const calendar = getCalendarClient(accessToken, refreshToken);
   const response = await calendar.events.list({
     calendarId: 'primary',
     timeMin: timeMin || new Date().toISOString(),
@@ -106,12 +110,7 @@ export async function updateEvent(
     location?: string;
   }
 ) {
-  oauth2Client.setCredentials({
-    access_token: accessToken,
-    refresh_token: refreshToken,
-  });
-
-  const calendar = getCalendarClient();
+  const calendar = getCalendarClient(accessToken, refreshToken);
   const response = await calendar.events.update({
     calendarId: 'primary',
     eventId: eventId,
@@ -127,12 +126,7 @@ export async function deleteEvent(
   refreshToken: string,
   eventId: string
 ) {
-  oauth2Client.setCredentials({
-    access_token: accessToken,
-    refresh_token: refreshToken,
-  });
-
-  const calendar = getCalendarClient();
+  const calendar = getCalendarClient(accessToken, refreshToken);
   await calendar.events.delete({
     calendarId: 'primary',
     eventId: eventId,

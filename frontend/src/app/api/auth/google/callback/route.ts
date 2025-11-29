@@ -21,18 +21,29 @@ export async function GET(request: NextRequest) {
   try {
     const tokens = await getTokenFromCode(code);
     
-    // access_token, refresh_tokenなどが返ってくる
-    console.log(tokens);
+    if (!tokens || (!tokens.access_token && !tokens.refresh_token)) {
+      console.error('トークンが空です:', tokens);
+      return NextResponse.redirect(
+        new URL('/login?error=トークンが取得できませんでした', request.url)
+      );
+    }
     
     // トークンを保存した上でアプリに戻す（ホームページへ）
     // 実際の実装では、セッションやデータベースに保存
-    return NextResponse.redirect(
-      new URL('/', request.url)
-    );
+    const redirectUrl = new URL('/', request.url);
+    if (tokens.access_token) {
+      redirectUrl.searchParams.set('access_token', tokens.access_token);
+    }
+    if (tokens.refresh_token) {
+      redirectUrl.searchParams.set('refresh_token', tokens.refresh_token);
+    }
+    
+    return NextResponse.redirect(redirectUrl);
   } catch (error) {
-    console.error('トークン取得エラー:', error);
+    console.error('トークン取得エラー詳細:', error);
+    const errorMessage = error instanceof Error ? error.message : 'トークンの取得に失敗しました';
     return NextResponse.redirect(
-      new URL('/?error=トークンの取得に失敗しました', request.url)
+      new URL(`/login?error=${encodeURIComponent(errorMessage)}`, request.url)
     );
   }
 }
