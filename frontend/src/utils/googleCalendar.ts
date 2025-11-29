@@ -1,10 +1,16 @@
 import { google } from 'googleapis';
 
 // Google OAuth 2.0設定
+const redirectUri = process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI;
+
+if (!redirectUri) {
+  throw new Error('NEXT_PUBLIC_GOOGLE_REDIRECT_URI が設定されていません');
+}
+
 const oauth2Client = new google.auth.OAuth2(
   process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
-  process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI || 'http://localhost:3000/auth/google/callback'
+  redirectUri
 );
 
 // 認証URLを生成
