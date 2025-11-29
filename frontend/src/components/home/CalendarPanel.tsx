@@ -323,7 +323,7 @@ export default function CalendarPanel({ onDateSelect, onMonthChange }: CalendarP
   };
 
   // 表示範囲の日付配列を生成
-  const getVisibleDays = () => {
+  const getVisibleDays = useCallback(() => {
     if (viewMode === 'month') {
       const startOfMonth = currentMonth.startOf('month');
       const endOfMonth = currentMonth.endOf('month');
@@ -346,7 +346,7 @@ export default function CalendarPanel({ onDateSelect, onMonthChange }: CalendarP
       return Array.from({ length: 3 }, (_, i) => start.add(i, 'day'));
     }
     return [currentMonth.startOf('day')];
-  };
+  }, [currentMonth, viewMode]);
 
   // 特定の日の予定を取得
   const getEventsForDay = (date: dayjs.Dayjs) => {
@@ -401,7 +401,7 @@ export default function CalendarPanel({ onDateSelect, onMonthChange }: CalendarP
       clearTimeout(timer);
       resizeObserver.disconnect();
     };
-  }, [currentMonth, events, viewMode]);
+  }, [currentMonth, events, viewMode, getVisibleDays]);
 
   // 日をクリック
   const handleDayClick = (date: dayjs.Dayjs, event: React.MouseEvent<HTMLElement>) => {

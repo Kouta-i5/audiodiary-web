@@ -100,7 +100,7 @@ export default function AudioDiaryPanel({
         setCurrentMonth(newMonth);
       }
     }
-  }, [externalSelectedDate]);
+  }, [externalSelectedDate, currentMonth]);
 
   // すべてのAudioDiary予定を取得（フィルタリングなし）
   const getAllAudioDiaryEvents = () => {

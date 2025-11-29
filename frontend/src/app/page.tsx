@@ -172,7 +172,6 @@ export default function HomePage() {
                       <CalendarPanel
                         onDateSelect={setSelectedDate}
                         onMonthChange={setCurrentMonth}
-                        isResizing={isResizing}
                       />
                     </Paper>
                   </Box>
