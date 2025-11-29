@@ -30,7 +30,7 @@ interface CalendarEvent {
 interface AudioDiaryPanelProps {
   currentMonth?: dayjs.Dayjs;
   onMonthChange?: (month: dayjs.Dayjs) => void;
-  selectedDate?: string;
+  selectedDate?: string | null;
 }
 
 export default function AudioDiaryPanel({
