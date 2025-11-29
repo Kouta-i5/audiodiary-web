@@ -41,7 +41,7 @@ export default function AudioDiaryPanel({
   const [selectedDiaryDate, setSelectedDiaryDate] = useState<string | null>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(externalCurrentMonth || dayjs());
 
   // 認証状態を確認
