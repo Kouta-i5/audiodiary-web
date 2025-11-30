@@ -7,13 +7,22 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from app.services.openai_service import OpenAIService
 
 router = APIRouter()
+_openai_service: OpenAIService | None = None
+
+
+def get_openai_service() -> OpenAIService:
+    """OpenAIServiceのシングルトンインスタンスを取得する"""
+    global _openai_service
+    if _openai_service is None:
+        _openai_service = OpenAIService()
+    return _openai_service
 
 
 @router.post("/transcribe", summary="音声をテキスト化(Whisper)")
 async def transcribe_audio(file: UploadFile = File(...)) -> JSONResponse:
     try:
         content = await file.read()
-        service = OpenAIService()
+        service = get_openai_service()
         text = service.transcribe_audio(content, filename=file.filename or "audio.webm", mime_type=file.content_type or "audio/webm")
         return JSONResponse({"text": text})
     except Exception as e:
@@ -30,7 +39,7 @@ async def transcribe_audio_stream(file: UploadFile = File(...)) -> StreamingResp
     """
     try:
         content = await file.read()
-        service = OpenAIService()
+        service = get_openai_service()
 
         def sse_generator() -> Iterator[str]:
             try:

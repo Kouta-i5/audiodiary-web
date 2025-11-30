@@ -20,4 +20,3 @@ healthcheck:
   timeout: 5
   healthy-threshold: 1
   unhealthy-threshold: 5
-

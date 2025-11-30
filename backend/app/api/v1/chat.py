@@ -13,7 +13,15 @@ from app.services.gemini_service import GeminiService
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
-gemini_service = GeminiService()
+_gemini_service: GeminiService | None = None
+
+
+def get_gemini_service() -> GeminiService:
+    """GeminiServiceのシングルトンインスタンスを取得する"""
+    global _gemini_service
+    if _gemini_service is None:
+        _gemini_service = GeminiService()
+    return _gemini_service
 
 
 @router.post("/message", response_model=ChatMessageResponse)
@@ -38,6 +46,7 @@ async def send_message(request: ChatMessageRequest) -> ChatMessageResponse:
             ]
 
         logger.info(f"リクエスト受信: content={request.content[:50]}, context={len(request.context) if request.context else 0}件, messages={len(messages_history) if messages_history else 0}件")
+        gemini_service = get_gemini_service()
         response = await gemini_service.generate_response(
             user_message=request.content,
             context=request.context,
@@ -67,6 +76,7 @@ async def summarize_conversation(request: SummarizeRequest) -> SummarizeResponse
         if not request.conversation:
             raise HTTPException(status_code=400, detail="会話履歴が提供されていません")
 
+        gemini_service = get_gemini_service()
         summary = await gemini_service.summarize_conversation(request.conversation)
         return SummarizeResponse(summary=summary)
     except HTTPException:

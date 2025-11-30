@@ -5,6 +5,15 @@ from pydantic import BaseModel, Field
 from app.services.openai_service import OpenAIService
 
 router = APIRouter()
+_openai_service: OpenAIService | None = None
+
+
+def get_openai_service() -> OpenAIService:
+    """OpenAIServiceのシングルトンインスタンスを取得する"""
+    global _openai_service
+    if _openai_service is None:
+        _openai_service = OpenAIService()
+    return _openai_service
 
 
 class TTSRequest(BaseModel):
@@ -16,7 +25,7 @@ class TTSRequest(BaseModel):
 @router.post("/synthesize", summary="テキストを音声化(TTS)")
 async def synthesize(req: TTSRequest) -> Response:
     try:
-        service = OpenAIService()
+        service = get_openai_service()
         audio = service.synthesize_speech(req.text, voice=req.voice, audio_format=req.format)
         media_type_map = {
             "mp3": "audio/mpeg",
