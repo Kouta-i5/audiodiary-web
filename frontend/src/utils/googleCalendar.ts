@@ -6,6 +6,14 @@ function getOAuth2Client() {
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   const redirectUri = process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI;
 
+  console.log('OAuth2Client設定:', {
+    hasClientId: !!clientId,
+    clientIdPrefix: clientId ? `${clientId.substring(0, 10)}...` : '未設定',
+    hasClientSecret: !!clientSecret,
+    hasRedirectUri: !!redirectUri,
+    redirectUri: redirectUri,
+  });
+
   if (!clientId) {
     throw new Error('GOOGLE_CLIENT_ID または NEXT_PUBLIC_GOOGLE_CLIENT_ID が設定されていません');
   }
@@ -37,11 +45,45 @@ export function getAuthUrl(): string {
 // トークンを交換
 export async function getTokenFromCode(code: string) {
   const oauth2Client = getOAuth2Client();
+  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
+  const redirectUri = process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI;
+
+  console.log('getTokenFromCode呼び出し:', {
+    hasCode: !!code,
+    codeLength: code?.length,
+    clientId: clientId ? `${clientId.substring(0, 10)}...` : '未設定',
+    redirectUri: redirectUri,
+  });
+
   try {
     const { tokens } = await oauth2Client.getToken(code);
+    console.log('トークン交換成功:', {
+      hasAccessToken: !!tokens.access_token,
+      hasRefreshToken: !!tokens.refresh_token,
+      hasIdToken: !!tokens.id_token,
+      expiryDate: tokens.expiry_date,
+    });
     return tokens;
   } catch (error) {
-    console.error('トークン交換エラー:', error);
+    const errorDetails = error instanceof Error ? {
+      message: error.message,
+      stack: error.stack,
+    } : {
+      message: String(error),
+    };
+
+    // Google OAuthエラーの詳細を取得
+    if (error && typeof error === 'object' && 'response' in error) {
+      const response = (error as any).response;
+      console.error('トークン交換エラー詳細:', {
+        ...errorDetails,
+        responseStatus: response?.status,
+        responseData: response?.data,
+      });
+    } else {
+      console.error('トークン交換エラー:', errorDetails);
+    }
+
     throw new Error(`トークンの取得に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
