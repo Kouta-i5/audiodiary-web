@@ -39,6 +39,6 @@ EXPOSE 8000
 # ヘルスチェック（/health）
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD ./.venv/bin/python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health').read()"
 
-# 本番はワーカー数を固定（必要に応じて調整）
-CMD ["./.venv/bin/uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+# App Runnerでは単一プロセスで起動（App Runnerが自動スケーリングするため）
+CMD ["./.venv/bin/uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
