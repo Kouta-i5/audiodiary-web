@@ -2,18 +2,18 @@ import { google } from 'googleapis';
 
 // Google OAuth 2.0設定を取得
 function getOAuth2Client() {
-  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
+  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   const redirectUri = process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI;
 
   if (!clientId) {
-    throw new Error('GOOGLE_CLIENT_ID または NEXT_PUBLIC_GOOGLE_CLIENT_ID が設定されていません');
+    throw new Error('NEXT_PUBLIC_GOOGLE_CLIENT_ID が設定されていません');
   }
   if (!clientSecret) {
     throw new Error('GOOGLE_CLIENT_SECRET が設定されていません');
   }
   if (!redirectUri) {
-    throw new Error('GOOGLE_REDIRECT_URI または NEXT_PUBLIC_GOOGLE_REDIRECT_URI が設定されていません');
+    throw new Error('NEXT_PUBLIC_GOOGLE_REDIRECT_URI が設定されていません');
   }
 
   return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
