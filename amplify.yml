@@ -4,7 +4,8 @@ applications:
       phases:
         preBuild:
           commands:
-            - npm ci
+            # npm ciの代わりにnpm installを使用（レジストリ障害回避のため）
+            - npm install
             # 環境変数を.env.productionに書き出す
             - env | grep -e NEXT_PUBLIC_ >> .env.production
             - echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env.production
