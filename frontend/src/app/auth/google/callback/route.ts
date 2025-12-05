@@ -6,15 +6,18 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code');
   const error = searchParams.get('error');
 
+  // ベースURLの決定（環境変数優先）
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || request.nextUrl.origin;
+
   if (error) {
     return NextResponse.redirect(
-      new URL(`/login?error=${encodeURIComponent(error)}`, request.url)
+      new URL(`/login?error=${encodeURIComponent(error)}`, baseUrl)
     );
   }
 
   if (!code) {
     return NextResponse.redirect(
-      new URL('/login?error=認証コードが取得できませんでした', request.url)
+      new URL('/login?error=認証コードが取得できませんでした', baseUrl)
     );
   }
 
@@ -26,7 +29,7 @@ export async function GET(request: NextRequest) {
     
     // トークンをURLパラメータとして / に渡す
     // 実際の実装では、セッションやデータベースに保存
-    const redirectUrl = new URL('/', request.url);
+    const redirectUrl = new URL('/', baseUrl);
     if (tokens.access_token) {
       redirectUrl.searchParams.set('access_token', tokens.access_token);
     }
@@ -38,8 +41,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('トークン取得エラー:', error);
     return NextResponse.redirect(
-      new URL('/login?error=トークンの取得に失敗しました', request.url)
+      new URL('/login?error=トークンの取得に失敗しました', baseUrl)
     );
   }
 }
-
