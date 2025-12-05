@@ -3,17 +3,19 @@ frontend:
   phases:
     preBuild:
       commands:
+        - cd frontend
         - npm ci
+        # 環境変数を.env.productionに書き出す
         - env | grep -e NEXT_PUBLIC_ >> .env.production
         - echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env.production
     build:
       commands:
         - npm run build
   artifacts:
-    baseDirectory: .next
+    baseDirectory: frontend/.next
     files:
       - '**/*'
   cache:
     paths:
-      - node_modules/**/*
+      - frontend/node_modules/**/*
 
